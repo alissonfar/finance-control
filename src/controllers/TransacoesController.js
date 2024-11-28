@@ -71,7 +71,7 @@ window.APP.controllers.transacoes = {
             JOIN contas c ON t.conta_id = c.id 
             JOIN categorias cat ON t.categoria_id = cat.id 
             WHERE t.ativo = 1 
-            ORDER BY t.data DESC
+            ORDER BY t.data_transacao DESC
         `;
 
         APP.db.all(sql, [], (err, transacoes) => {
@@ -99,7 +99,7 @@ window.APP.controllers.transacoes = {
             transacoes.forEach(transacao => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${APP.utils.formatarData(transacao.data)}</td>
+                    <td>${APP.utils.formatarData(transacao.data_transacao)}</td>
                     <td>${transacao.conta_nome}</td>
                     <td>${transacao.categoria_nome}</td>
                     <td>${transacao.tipo}</td>
@@ -154,7 +154,7 @@ window.APP.controllers.transacoes = {
             tipo: document.getElementById('tipo').value,
             categoria_id: document.getElementById('categoria_id').value,
             valor: document.getElementById('valor').value,
-            data: document.getElementById('data_transacao').value,
+            data_transacao: document.getElementById('data_transacao').value,
             metodo_pagamento: document.getElementById('metodo_pagamento').value,
             descricao: document.getElementById('descricao').value
         };
@@ -162,7 +162,7 @@ window.APP.controllers.transacoes = {
         console.log('Dados do formulário:', formData);
 
         // Validações básicas
-        if (!formData.conta_id || !formData.tipo || !formData.categoria_id || !formData.valor || !formData.data) {
+        if (!formData.conta_id || !formData.tipo || !formData.categoria_id || !formData.valor || !formData.data_transacao) {
             alert('Por favor, preencha todos os campos obrigatórios');
             return false;
         }
@@ -177,7 +177,7 @@ window.APP.controllers.transacoes = {
         const sql = `
             INSERT INTO transacoes (
                 conta_id, tipo, categoria_id, valor, 
-                data, metodo_pagamento, descricao
+                data_transacao, metodo_pagamento, descricao
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
 
@@ -186,7 +186,7 @@ window.APP.controllers.transacoes = {
             formData.tipo,
             formData.categoria_id,
             valor,
-            formData.data,
+            formData.data_transacao,
             formData.metodo_pagamento,
             formData.descricao
         ], function(err) {
@@ -214,8 +214,9 @@ window.APP.controllers.transacoes = {
 
                 console.log('Saldo atualizado com sucesso');
                 alert('Transação salva com sucesso!');
-                document.getElementById('transacaoForm').reset();
-                APP.controllers.transacoes.carregarDadosIniciais();
+                
+                // Recarregar toda a página de transações
+                carregarConteudo('transacoes');
             });
         });
 
