@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Controle Financeiro</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <div id="sidebar">
+        <nav>
+            <ul>
+                <li><a href="#" onclick="carregarConteudo('contas')">Contas</a></li>
+                <li><a href="#" onclick="carregarConteudo('transacoes')">Transações</a></li>
+                <li><a href="#" onclick="carregarConteudo('participantes')">Participantes</a></li>
+                <li><a href="#" onclick="carregarConteudo('relatorios')">Relatórios</a></li>
+            </ul>
+        </nav>
+    </div>
+    <div id="main-content">
+        <!-- Conteúdo será carregado aqui -->
+    </div>
+
+    <!-- Scripts em ordem de dependência -->
+    <script>
+        // Namespace global para a aplicação
+        window.APP = {
+            controllers: {}
+        };
+    </script>
+
+    <!-- Controllers -->
+    <script src="../database/connection.js"></script>
+    <script src="../controllers/ContasController.js"></script>
+    <script src="../controllers/TransacoesController.js"></script>
+
+    <!-- Script principal -->
+    <script>
+        function carregarConteudo(pagina) {
+            const mainContent = document.getElementById('main-content');
+            
+            if (pagina === 'contas') {
+                mainContent.innerHTML = `
+                    <h2>Cadastro de Contas</h2>
+                    
+                    <form id="contaForm" onsubmit="return APP.controllers.contas.handleSubmit(event)">
+                        <div class="form-group">
+                            <label for="nome">Nome da Conta:</label>
+                            <input type="text" id="nome" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="saldo_inicial">Saldo Inicial:</label>
+                            <input type="number" id="saldo_inicial" step="0.01" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="descricao">Descrição:</label>
+                            <input type="text" id="descricao">
+                        </div>
+                        
+                        <button type="submit">Salvar Conta</button>
+                    </form>
+
+                    <h3>Contas Cadastradas</h3>
+                    <table id="contasTable">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Saldo Atual</th>
+                                <th>Saldo Inicial</th>
+                                <th>Descrição</th>
+                                <th>Data Criação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                `;
+                
+                APP.controllers.contas.carregarContas();
+                
+            } else if (pagina === 'transacoes') {
+                mainContent.innerHTML = `
+                    <h2>Registro de Transações</h2>
+                    
+                    <form id="transacaoForm" onsubmit="return APP.controllers.transacoes.handleSubmit(event)">
+                        <div class="form-group">
+                            <label for="conta_id">Conta:</label>
+                            <select id="conta_id" required>
+                                <option value="">Selecione uma conta</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tipo">Tipo:</label>
+                            <select id="tipo" required onchange="APP.controllers.transacoes.handleTipoChange(this.value)">
+                                <option value="">Selecione o tipo</option>
+                                <option value="RECEITA">Receita</option>
+                                <option value="DESPESA">Despesa</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="categoria_id">Categoria:</label>
+                            <select id="categoria_id" required>
+                                <option value="">Selecione uma categoria</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="valor">Valor:</label>
+                            <input type="number" id="valor" step="0.01" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="data_transacao">Data:</label>
+                            <input type="date" id="data_transacao" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="metodo_pagamento">Método de Pagamento:</label>
+                            <select id="metodo_pagamento" required>
+                                <option value="">Selecione o método</option>
+                                <option value="DINHEIRO">Dinheiro</option>
+                                <option value="PIX">PIX</option>
+                                <option value="DÉBITO">Cartão de Débito</option>
+                                <option value="CRÉDITO">Cartão de Crédito</option>
+                                <option value="TRANSFERÊNCIA">Transferência</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descricao">Descrição:</label>
+                            <input type="text" id="descricao">
+                        </div>
+
+                        <button type="submit">Salvar Transação</button>
+                    </form>
+
+                    <h3>Transações Cadastradas</h3>
+                    <table id="transacoesTable">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Conta</th>
+                                <th>Categoria</th>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                                <th>Método</th>
+                                <th>Descrição</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                `;
+                
+                APP.controllers.transacoes.carregarDadosIniciais();
+                
+            } else {
+                mainContent.innerHTML = '<h1>Página em construção</h1>';
+            }
+        }
+
+        // Inicialização quando o DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM carregado, iniciando aplicação...');
+            carregarConteudo('contas');
+        });
+    </script>
+</body>
+</html>
