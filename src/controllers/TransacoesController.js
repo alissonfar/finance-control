@@ -2,12 +2,37 @@ console.log('Iniciando TransacoesController...');
 
 // Definir o controller de transações no namespace APP
 window.APP.controllers.transacoes = {
+    // Constantes do controller
+    METODOS_PAGAMENTO: {
+        DINHEIRO: 'DINHEIRO',
+        DEBITO: 'DÉBITO',
+        CREDITO: 'CRÉDITO',
+        PIX: 'PIX',
+        VA_VR: 'VA/VR',
+        TRANSFERENCIA: 'TRANSFERÊNCIA'
+    },
+
     // Função para carregar dados iniciais
     carregarDadosIniciais: function() {
         console.log('Iniciando carregamento de dados...');
         this.carregarContas();
         this.carregarCategorias();
         this.carregarTransacoes();
+        this.inicializarMetodosPagamento();
+    },
+
+    // Inicializar select de métodos de pagamento
+    inicializarMetodosPagamento: function() {
+        const select = document.getElementById('metodo_pagamento');
+        if (!select) return;
+
+        select.innerHTML = '<option value="">Selecione o método</option>';
+        Object.entries(this.METODOS_PAGAMENTO).forEach(([key, value]) => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = value;
+            select.appendChild(option);
+        });
     },
 
     // Função para carregar contas no select
@@ -31,6 +56,64 @@ window.APP.controllers.transacoes = {
                 const option = document.createElement('option');
                 option.value = conta.id;
                 option.textContent = conta.nome;
+                select.appendChild(option);
+            });
+        });
+    },
+
+    // Função para carregar cartões de crédito da conta selecionada
+    carregarCartoes: function(contaId) {
+        if (!contaId) return;
+        
+        console.log('Carregando cartões para conta:', contaId);
+        const sql = 'SELECT * FROM cartoes_credito WHERE conta_id = ? AND ativo = 1';
+        
+        APP.db.all(sql, [contaId], (err, cartoes) => {
+            if (err) {
+                console.error('Erro ao carregar cartões:', err);
+                return;
+            }
+
+            const select = document.getElementById('cartao_id');
+            if (!select) return;
+
+            select.innerHTML = '<option value="">Selecione um cartão</option>';
+            cartoes.forEach(cartao => {
+                const option = document.createElement('option');
+                option.value = cartao.id;
+                option.textContent = cartao.nome;
+                select.appendChild(option);
+            });
+        });
+    },
+
+    // Função para carregar faturas do cartão selecionado
+    carregarFaturas: function(cartaoId) {
+        if (!cartaoId) return;
+        
+        console.log('Carregando faturas para cartão:', cartaoId);
+        const sql = `
+            SELECT * FROM faturas 
+            WHERE cartao_id = ? 
+            AND status = 'ABERTA' 
+            AND ativo = 1
+            ORDER BY data_vencimento DESC
+        `;
+        
+        APP.db.all(sql, [cartaoId], (err, faturas) => {
+            if (err) {
+                console.error('Erro ao carregar faturas:', err);
+                return;
+            }
+
+            const select = document.getElementById('fatura_id');
+            if (!select) return;
+
+            select.innerHTML = '<option value="">Selecione uma fatura</option>';
+            faturas.forEach(fatura => {
+                const option = document.createElement('option');
+                option.value = fatura.id;
+                option.textContent = `${fatura.mes_referencia} - Venc: ${APP.utils.formatarData(fatura.data_vencimento)}`;
                 select.appendChild(option);
             });
         });
@@ -66,10 +149,15 @@ window.APP.controllers.transacoes = {
     carregarTransacoes: function() {
         console.log('Tentando carregar transações...');
         const sql = `
-            SELECT t.*, c.nome as conta_nome, cat.nome as categoria_nome 
+            SELECT 
+                t.*, 
+                c.nome as conta_nome, 
+                cat.nome as categoria_nome,
+                cc.nome as cartao_nome
             FROM transacoes t 
             JOIN contas c ON t.conta_id = c.id 
             JOIN categorias cat ON t.categoria_id = cat.id 
+            LEFT JOIN cartoes_credito cc ON t.cartao_id = cc.id
             WHERE t.ativo = 1 
             ORDER BY t.data_transacao DESC
         `;
@@ -91,7 +179,7 @@ window.APP.controllers.transacoes = {
 
             if (transacoes.length === 0) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="7">Nenhuma transação cadastrada</td>';
+                tr.innerHTML = '<td colspan="8">Nenhuma transação cadastrada</td>';
                 tbody.appendChild(tr);
                 return;
             }
@@ -105,6 +193,7 @@ window.APP.controllers.transacoes = {
                     <td>${transacao.tipo}</td>
                     <td>${APP.utils.formatarMoeda(transacao.valor)}</td>
                     <td>${transacao.metodo_pagamento}</td>
+                    <td>${transacao.cartao_nome || '-'}</td>
                     <td>${transacao.descricao || '-'}</td>
                 `;
                 tbody.appendChild(tr);
@@ -144,6 +233,21 @@ window.APP.controllers.transacoes = {
         });
     },
 
+    // Função para lidar com mudança no método de pagamento
+    handleMetodoPagamentoChange: function(metodo) {
+        console.log('Método de pagamento alterado:', metodo);
+        const camposCartao = document.getElementById('campos_cartao_credito');
+        if (!camposCartao) return;
+
+        if (metodo === this.METODOS_PAGAMENTO.CREDITO) {
+            camposCartao.style.display = 'block';
+            const contaId = document.getElementById('conta_id').value;
+            this.carregarCartoes(contaId);
+        } else {
+            camposCartao.style.display = 'none';
+        }
+    },
+
     // Função para salvar transação
     handleSubmit: function(event) {
         event.preventDefault();
@@ -156,13 +260,17 @@ window.APP.controllers.transacoes = {
             valor: document.getElementById('valor').value,
             data_transacao: document.getElementById('data_transacao').value,
             metodo_pagamento: document.getElementById('metodo_pagamento').value,
-            descricao: document.getElementById('descricao').value
+            descricao: document.getElementById('descricao').value,
+            cartao_id: null,
+            fatura_id: null,
+            numero_parcelas: 1
         };
 
         console.log('Dados do formulário:', formData);
 
         // Validações básicas
-        if (!formData.conta_id || !formData.tipo || !formData.categoria_id || !formData.valor || !formData.data_transacao) {
+        if (!formData.conta_id || !formData.tipo || !formData.categoria_id || 
+            !formData.valor || !formData.data_transacao || !formData.metodo_pagamento) {
             alert('Por favor, preencha todos os campos obrigatórios');
             return false;
         }
@@ -173,12 +281,25 @@ window.APP.controllers.transacoes = {
             return false;
         }
 
+        // Validações específicas para cartão de crédito
+        if (formData.metodo_pagamento === this.METODOS_PAGAMENTO.CREDITO) {
+            formData.cartao_id = document.getElementById('cartao_id').value;
+            formData.fatura_id = document.getElementById('fatura_id').value;
+            formData.numero_parcelas = parseInt(document.getElementById('numero_parcelas').value) || 1;
+
+            if (!formData.cartao_id || !formData.fatura_id) {
+                alert('Por favor, selecione o cartão e a fatura');
+                return false;
+            }
+        }
+
         // Inserir transação
         const sql = `
             INSERT INTO transacoes (
                 conta_id, tipo, categoria_id, valor, 
-                data_transacao, metodo_pagamento, descricao
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                data_transacao, metodo_pagamento, descricao,
+                cartao_id, fatura_id, numero_parcelas
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         APP.db.run(sql, [
@@ -188,7 +309,10 @@ window.APP.controllers.transacoes = {
             valor,
             formData.data_transacao,
             formData.metodo_pagamento,
-            formData.descricao
+            formData.descricao,
+            formData.cartao_id,
+            formData.fatura_id,
+            formData.numero_parcelas
         ], function(err) {
             if (err) {
                 console.error('Erro ao salvar transação:', err);
@@ -198,26 +322,40 @@ window.APP.controllers.transacoes = {
 
             console.log('Transação salva com sucesso, atualizando saldo...');
 
-            // Atualizar saldo da conta
-            const sqlAtualizarSaldo = `
-                UPDATE contas 
-                SET saldo_atual = saldo_atual ${formData.tipo === 'RECEITA' ? '+' : '-'} ?
-                WHERE id = ?
-            `;
+            // Se for cartão de crédito, atualiza o valor da fatura
+            if (formData.metodo_pagamento === APP.controllers.transacoes.METODOS_PAGAMENTO.CREDITO) {
+                const sqlAtualizarFatura = `
+                    UPDATE faturas 
+                    SET valor_total = valor_total + ?
+                    WHERE id = ?
+                `;
 
-            APP.db.run(sqlAtualizarSaldo, [valor, formData.conta_id], function(err) {
-                if (err) {
-                    console.error('Erro ao atualizar saldo:', err);
-                    alert('Erro ao atualizar saldo da conta');
-                    return;
-                }
+                APP.db.run(sqlAtualizarFatura, [valor, formData.fatura_id], function(err) {
+                    if (err) {
+                        console.error('Erro ao atualizar valor da fatura:', err);
+                    }
+                });
+            } else {
+                // Se não for cartão de crédito, atualiza o saldo da conta
+                const sqlAtualizarSaldo = `
+                    UPDATE contas 
+                    SET saldo_atual = saldo_atual ${formData.tipo === 'RECEITA' ? '+' : '-'} ?
+                    WHERE id = ?
+                `;
 
-                console.log('Saldo atualizado com sucesso');
-                alert('Transação salva com sucesso!');
-                
-                // Recarregar toda a página de transações
-                carregarConteudo('transacoes');
-            });
+                APP.db.run(sqlAtualizarSaldo, [valor, formData.conta_id], function(err) {
+                    if (err) {
+                        console.error('Erro ao atualizar saldo:', err);
+                        alert('Erro ao atualizar saldo da conta');
+                        return;
+                    }
+
+                    console.log('Saldo atualizado com sucesso');
+                });
+            }
+
+            alert('Transação salva com sucesso!');
+            carregarConteudo('transacoes');
         });
 
         return false;

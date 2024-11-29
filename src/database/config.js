@@ -42,11 +42,8 @@ function initDatabase() {
                 });
             }
         });
-        
 
-
-
-
+        // Criar tabela categorias
         db.run(`
             CREATE TABLE IF NOT EXISTS categorias (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,6 +88,7 @@ function initDatabase() {
             }
         });
 
+        // Criar tabela transacoes
         db.run(`
             CREATE TABLE IF NOT EXISTS transacoes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -114,7 +112,74 @@ function initDatabase() {
                 console.log('Tabela transacoes verificada/criada');
             }
         });
-        
+
+        // Criar tabela cartoes_credito
+        db.run(`
+            CREATE TABLE IF NOT EXISTS cartoes_credito (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conta_id INTEGER NOT NULL,
+                nome TEXT NOT NULL,
+                limite DECIMAL(10,2) NOT NULL,
+                dia_fechamento INTEGER NOT NULL,
+                dia_vencimento INTEGER NOT NULL,
+                data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+                ativo INTEGER DEFAULT 1,
+                FOREIGN KEY (conta_id) REFERENCES contas(id)
+            )
+        `, (err) => {
+            if (err) {
+                console.error('Erro ao criar tabela cartoes_credito:', err);
+            } else {
+                console.log('Tabela cartoes_credito verificada/criada');
+            }
+        });
+
+        // Criar tabela faturas
+        db.run(`
+            CREATE TABLE IF NOT EXISTS faturas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                cartao_id INTEGER NOT NULL,
+                mes_referencia TEXT NOT NULL,
+                data_fechamento DATE NOT NULL,
+                data_vencimento DATE NOT NULL,
+                valor_total DECIMAL(10,2) DEFAULT 0,
+                status TEXT DEFAULT 'ABERTA',
+                data_pagamento DATE,
+                data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+                ativo INTEGER DEFAULT 1,
+                FOREIGN KEY (cartao_id) REFERENCES cartoes_credito(id)
+            )
+        `, (err) => {
+            if (err) {
+                console.error('Erro ao criar tabela faturas:', err);
+            } else {
+                console.log('Tabela faturas verificada/criada');
+            }
+        });
+
+        // Adicionar novas colunas na tabela transacoes
+        const alteracoes = [
+            {
+                sql: `ALTER TABLE transacoes ADD COLUMN cartao_id INTEGER REFERENCES cartoes_credito(id)`,
+                mensagem: 'Coluna cartao_id já existe ou erro:'
+            },
+            {
+                sql: `ALTER TABLE transacoes ADD COLUMN fatura_id INTEGER REFERENCES faturas(id)`,
+                mensagem: 'Coluna fatura_id já existe ou erro:'
+            },
+            {
+                sql: `ALTER TABLE transacoes ADD COLUMN numero_parcelas INTEGER DEFAULT 1`,
+                mensagem: 'Coluna numero_parcelas já existe ou erro:'
+            }
+        ];
+
+        alteracoes.forEach(alteracao => {
+            db.run(alteracao.sql, (err) => {
+                if (err) {
+                    console.log(alteracao.mensagem, err);
+                }
+            });
+        });
     });
 }
 
