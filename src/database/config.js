@@ -96,15 +96,19 @@ function initDatabase() {
                 categoria_id INTEGER NOT NULL,
                 tipo TEXT NOT NULL CHECK (tipo IN ('RECEITA', 'DESPESA')),
                 valor DECIMAL(10,2) NOT NULL,
-                data_transacao DATE NOT NULL,
+                data_efetiva DATE NOT NULL,        -- Data que a transação ocorreu
+                data_lancamento DATETIME DEFAULT CURRENT_TIMESTAMP,  -- Data que foi registrada no sistema
                 descricao TEXT,
                 metodo_pagamento TEXT NOT NULL,
                 status TEXT NOT NULL DEFAULT 'CONFIRMADO',
-                data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
                 ativo INTEGER DEFAULT 1,
+                cartao_id INTEGER REFERENCES cartoes_credito(id),
+                fatura_id INTEGER REFERENCES faturas(id),
+                numero_parcelas INTEGER DEFAULT 1,
                 FOREIGN KEY (conta_id) REFERENCES contas(id),
                 FOREIGN KEY (categoria_id) REFERENCES categorias(id)
             )
+            
         `, (err) => {
             if (err) {
                 console.error('Erro ao criar tabela transacoes:', err);

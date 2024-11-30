@@ -1,8 +1,6 @@
 console.log('Iniciando TransacoesController...');
 
-// Definir o controller de transações no namespace APP
 window.APP.controllers.transacoes = {
-    // Constantes do controller
     METODOS_PAGAMENTO: {
         DINHEIRO: 'DINHEIRO',
         DEBITO: 'DÉBITO',
@@ -12,16 +10,34 @@ window.APP.controllers.transacoes = {
         TRANSFERENCIA: 'TRANSFERÊNCIA'
     },
 
-    // Função para carregar dados iniciais
     carregarDadosIniciais: function() {
         console.log('Iniciando carregamento de dados...');
         this.carregarContas();
         this.carregarCategorias();
         this.carregarTransacoes();
         this.inicializarMetodosPagamento();
+        this.setDataAtual();
     },
 
-    // Inicializar select de métodos de pagamento
+    setDataAtual: function() {
+        const hoje = new Date();
+        const dataFormatada = hoje.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+        const inputDataEfetiva = document.getElementById('data_efetiva');
+        if (inputDataEfetiva) {
+            inputDataEfetiva.value = dataFormatada;
+        }
+    },
+    
+    formatarDataHora: function(dataString) {
+        if (!dataString) return '-';
+        const data = new Date(dataString);
+        return data.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    },
+
     inicializarMetodosPagamento: function() {
         const select = document.getElementById('metodo_pagamento');
         if (!select) return;
@@ -35,7 +51,6 @@ window.APP.controllers.transacoes = {
         });
     },
 
-    // Função para carregar contas no select
     carregarContas: function() {
         console.log('Tentando carregar contas...');
         APP.db.all('SELECT * FROM contas WHERE ativo = 1', [], (err, contas) => {
@@ -44,12 +59,8 @@ window.APP.controllers.transacoes = {
                 return;
             }
 
-            console.log('Contas carregadas:', contas);
             const select = document.getElementById('conta_id');
-            if (!select) {
-                console.error('Elemento select "conta_id" não encontrado');
-                return;
-            }
+            if (!select) return;
 
             select.innerHTML = '<option value="">Selecione uma conta</option>';
             contas.forEach(conta => {
@@ -61,11 +72,9 @@ window.APP.controllers.transacoes = {
         });
     },
 
-    // Função para carregar cartões de crédito da conta selecionada
     carregarCartoes: function(contaId) {
         if (!contaId) return;
         
-        console.log('Carregando cartões para conta:', contaId);
         const sql = 'SELECT * FROM cartoes_credito WHERE conta_id = ? AND ativo = 1';
         
         APP.db.all(sql, [contaId], (err, cartoes) => {
@@ -87,11 +96,9 @@ window.APP.controllers.transacoes = {
         });
     },
 
-    // Função para carregar faturas do cartão selecionado
     carregarFaturas: function(cartaoId) {
         if (!cartaoId) return;
         
-        console.log('Carregando faturas para cartão:', cartaoId);
         const sql = `
             SELECT * FROM faturas 
             WHERE cartao_id = ? 
@@ -113,13 +120,12 @@ window.APP.controllers.transacoes = {
             faturas.forEach(fatura => {
                 const option = document.createElement('option');
                 option.value = fatura.id;
-                option.textContent = `${fatura.mes_referencia} - Venc: ${APP.utils.formatarData(fatura.data_vencimento)}`;
+                option.textContent = `${fatura.mes_referencia} - Venc: ${this.formatarDataHora(fatura.data_vencimento)}`;
                 select.appendChild(option);
             });
         });
     },
 
-    // Função para carregar categorias no select
     carregarCategorias: function() {
         console.log('Tentando carregar categorias...');
         APP.db.all('SELECT * FROM categorias WHERE ativo = 1', [], (err, categorias) => {
@@ -128,12 +134,8 @@ window.APP.controllers.transacoes = {
                 return;
             }
 
-            console.log('Categorias carregadas:', categorias);
             const select = document.getElementById('categoria_id');
-            if (!select) {
-                console.error('Elemento select "categoria_id" não encontrado');
-                return;
-            }
+            if (!select) return;
 
             select.innerHTML = '<option value="">Selecione uma categoria</option>';
             categorias.forEach(categoria => {
@@ -145,7 +147,6 @@ window.APP.controllers.transacoes = {
         });
     },
 
-    // Função para carregar transações
     carregarTransacoes: function() {
         console.log('Tentando carregar transações...');
         const sql = `
@@ -159,7 +160,7 @@ window.APP.controllers.transacoes = {
             JOIN categorias cat ON t.categoria_id = cat.id 
             LEFT JOIN cartoes_credito cc ON t.cartao_id = cc.id
             WHERE t.ativo = 1 
-            ORDER BY t.data_transacao DESC
+            ORDER BY t.data_efetiva DESC
         `;
 
         APP.db.all(sql, [], (err, transacoes) => {
@@ -168,26 +169,20 @@ window.APP.controllers.transacoes = {
                 return;
             }
 
-            console.log('Transações carregadas:', transacoes);
             const tbody = document.querySelector('#transacoesTable tbody');
-            if (!tbody) {
-                console.error('Elemento tbody não encontrado');
-                return;
-            }
+            if (!tbody) return;
 
             tbody.innerHTML = '';
 
             if (transacoes.length === 0) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="8">Nenhuma transação cadastrada</td>';
-                tbody.appendChild(tr);
+                tbody.innerHTML = '<tr><td colspan="8">Nenhuma transação cadastrada</td></tr>';
                 return;
             }
 
             transacoes.forEach(transacao => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${APP.utils.formatarData(transacao.data_transacao)}</td>
+                    <td>${this.formatarDataHora(transacao.data_efetiva)}</td>
                     <td>${transacao.conta_nome}</td>
                     <td>${transacao.categoria_nome}</td>
                     <td>${transacao.tipo}</td>
@@ -201,15 +196,10 @@ window.APP.controllers.transacoes = {
         });
     },
 
-    // Função para lidar com mudança no tipo de transação
     handleTipoChange: function(tipo) {
-        console.log('Tipo alterado:', tipo);
         const categoriaSelect = document.getElementById('categoria_id');
         
-        if (!tipo) {
-            console.log('Tipo não selecionado');
-            return;
-        }
+        if (!tipo) return;
         
         APP.db.all('SELECT * FROM categorias WHERE tipo = ? AND ativo = 1', [tipo], (err, categorias) => {
             if (err) {
@@ -217,11 +207,7 @@ window.APP.controllers.transacoes = {
                 return;
             }
 
-            console.log('Categorias filtradas:', categorias);
-            if (!categoriaSelect) {
-                console.error('Elemento select categoria não encontrado');
-                return;
-            }
+            if (!categoriaSelect) return;
 
             categoriaSelect.innerHTML = '<option value="">Selecione uma categoria</option>';
             categorias.forEach(categoria => {
@@ -233,9 +219,7 @@ window.APP.controllers.transacoes = {
         });
     },
 
-    // Função para lidar com mudança no método de pagamento
     handleMetodoPagamentoChange: function(metodo) {
-        console.log('Método de pagamento alterado:', metodo);
         const camposCartao = document.getElementById('campos_cartao_credito');
         if (!camposCartao) return;
 
@@ -248,17 +232,15 @@ window.APP.controllers.transacoes = {
         }
     },
 
-    // Função para salvar transação
     handleSubmit: function(event) {
         event.preventDefault();
-        console.log('Iniciando salvamento de transação...');
         
         const formData = {
             conta_id: document.getElementById('conta_id').value,
             tipo: document.getElementById('tipo').value,
             categoria_id: document.getElementById('categoria_id').value,
             valor: document.getElementById('valor').value,
-            data_transacao: document.getElementById('data_transacao').value,
+            data_efetiva: document.getElementById('data_efetiva').value,
             metodo_pagamento: document.getElementById('metodo_pagamento').value,
             descricao: document.getElementById('descricao').value,
             cartao_id: null,
@@ -266,11 +248,9 @@ window.APP.controllers.transacoes = {
             numero_parcelas: 1
         };
 
-        console.log('Dados do formulário:', formData);
-
         // Validações básicas
         if (!formData.conta_id || !formData.tipo || !formData.categoria_id || 
-            !formData.valor || !formData.data_transacao || !formData.metodo_pagamento) {
+            !formData.valor || !formData.data_efetiva || !formData.metodo_pagamento) {
             alert('Por favor, preencha todos os campos obrigatórios');
             return false;
         }
@@ -294,20 +274,20 @@ window.APP.controllers.transacoes = {
         }
 
         // Inserir transação
-        const sql = `
-            INSERT INTO transacoes (
-                conta_id, tipo, categoria_id, valor, 
-                data_transacao, metodo_pagamento, descricao,
-                cartao_id, fatura_id, numero_parcelas
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-
+                const sql = `
+                INSERT INTO transacoes (
+                    conta_id, tipo, categoria_id, valor, 
+                    data_efetiva, data_lancamento, metodo_pagamento, descricao,
+                    cartao_id, fatura_id, numero_parcelas
+                ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
+            `;
+            
         APP.db.run(sql, [
             formData.conta_id,
             formData.tipo,
             formData.categoria_id,
             valor,
-            formData.data_transacao,
+            formData.data_efetiva,
             formData.metodo_pagamento,
             formData.descricao,
             formData.cartao_id,
@@ -320,9 +300,6 @@ window.APP.controllers.transacoes = {
                 return;
             }
 
-            console.log('Transação salva com sucesso, atualizando saldo...');
-
-            // Se for cartão de crédito, atualiza o valor da fatura
             if (formData.metodo_pagamento === APP.controllers.transacoes.METODOS_PAGAMENTO.CREDITO) {
                 const sqlAtualizarFatura = `
                     UPDATE faturas 
@@ -336,7 +313,6 @@ window.APP.controllers.transacoes = {
                     }
                 });
             } else {
-                // Se não for cartão de crédito, atualiza o saldo da conta
                 const sqlAtualizarSaldo = `
                     UPDATE contas 
                     SET saldo_atual = saldo_atual ${formData.tipo === 'RECEITA' ? '+' : '-'} ?
@@ -349,8 +325,6 @@ window.APP.controllers.transacoes = {
                         alert('Erro ao atualizar saldo da conta');
                         return;
                     }
-
-                    console.log('Saldo atualizado com sucesso');
                 });
             }
 
@@ -362,7 +336,6 @@ window.APP.controllers.transacoes = {
     }
 };
 
-// Manter compatibilidade com o código existente
 window.carregarDadosIniciais = function() {
     APP.controllers.transacoes.carregarDadosIniciais();
 };

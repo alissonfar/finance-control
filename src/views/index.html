@@ -10,6 +10,7 @@
         <nav>
             <ul>
                 <li><a href="#" onclick="carregarConteudo('contas')">Contas</a></li>
+                <li><a href="#" onclick="carregarConteudo('cartoes')">Cartões</a></li>
                 <li><a href="#" onclick="carregarConteudo('transacoes')">Transações</a></li>
                 <li><a href="#" onclick="carregarConteudo('participantes')">Participantes</a></li>
                 <li><a href="#" onclick="carregarConteudo('relatorios')">Relatórios</a></li>
@@ -31,6 +32,7 @@
     <!-- Controllers -->
     <script src="../database/connection.js"></script>
     <script src="../controllers/ContasController.js"></script>
+    <script src="../controllers/CartoesController.js"></script>
     <script src="../controllers/TransacoesController.js"></script>
 
     <!-- Script principal -->
@@ -79,6 +81,60 @@
                 
                 APP.controllers.contas.carregarContas();
                 
+            } else if (pagina === 'cartoes') {
+                mainContent.innerHTML = `
+                    <h2>Gestão de Cartões de Crédito</h2>
+                    
+                    <form id="cartaoForm" onsubmit="return APP.controllers.cartoes.handleSubmit(event)">
+                        <div class="form-group">
+                            <label for="conta_id">Conta:</label>
+                            <select id="conta_id" required>
+                                <option value="">Selecione uma conta</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="nome">Nome do Cartão:</label>
+                            <input type="text" id="nome" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="limite">Limite:</label>
+                            <input type="number" id="limite" step="0.01" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="dia_fechamento">Dia do Fechamento:</label>
+                            <input type="number" id="dia_fechamento" min="1" max="31" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="dia_vencimento">Dia do Vencimento:</label>
+                            <input type="number" id="dia_vencimento" min="1" max="31" required>
+                        </div>
+                        
+                        <button type="submit">Salvar Cartão</button>
+                    </form>
+
+                    <h3>Cartões Cadastrados</h3>
+                    <table id="cartoesTable">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Conta</th>
+                                <th>Limite</th>
+                                <th>Dia Fechamento</th>
+                                <th>Dia Vencimento</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                `;
+                
+                APP.controllers.cartoes.carregarDadosIniciais();
+                
             } else if (pagina === 'transacoes') {
                 mainContent.innerHTML = `
                     <h2>Registro de Transações</h2>
@@ -112,21 +168,39 @@
                             <input type="number" id="valor" step="0.01" required>
                         </div>
 
+
                         <div class="form-group">
-                            <label for="data_transacao">Data:</label>
-                            <input type="date" id="data_transacao" required>
+                            <label for="data_efetiva">Data e Hora da Transação:</label>
+                            <input type="datetime-local" id="data_efetiva" required>
                         </div>
 
                         <div class="form-group">
                             <label for="metodo_pagamento">Método de Pagamento:</label>
-                            <select id="metodo_pagamento" required>
+                            <select id="metodo_pagamento" required onchange="APP.controllers.transacoes.handleMetodoPagamentoChange(this.value)">
                                 <option value="">Selecione o método</option>
-                                <option value="DINHEIRO">Dinheiro</option>
-                                <option value="PIX">PIX</option>
-                                <option value="DÉBITO">Cartão de Débito</option>
-                                <option value="CRÉDITO">Cartão de Crédito</option>
-                                <option value="TRANSFERÊNCIA">Transferência</option>
                             </select>
+                        </div>
+
+                        <!-- Campos para cartão de crédito -->
+                        <div id="campos_cartao_credito" style="display: none;">
+                            <div class="form-group">
+                                <label for="cartao_id">Cartão de Crédito:</label>
+                                <select id="cartao_id" onchange="APP.controllers.transacoes.carregarFaturas(this.value)">
+                                    <option value="">Selecione um cartão</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="fatura_id">Fatura:</label>
+                                <select id="fatura_id">
+                                    <option value="">Selecione uma fatura</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="numero_parcelas">Número de Parcelas:</label>
+                                <input type="number" id="numero_parcelas" min="1" max="24" value="1">
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -147,6 +221,7 @@
                                 <th>Tipo</th>
                                 <th>Valor</th>
                                 <th>Método</th>
+                                <th>Cartão</th>
                                 <th>Descrição</th>
                             </tr>
                         </thead>
@@ -168,5 +243,28 @@
             carregarConteudo('contas');
         });
     </script>
+
+    <style>
+        .modal {
+            display: block;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 5px;
+        }
+    </style>
 </body>
 </html>
