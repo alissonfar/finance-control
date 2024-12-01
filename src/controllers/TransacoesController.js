@@ -17,6 +17,7 @@ window.APP.controllers.transacoes = {
         this.carregarTransacoes();
         this.inicializarMetodosPagamento();
         this.setDataAtual();
+        APP.controllers.participantes.carregarParticipantes();
     },
 
     setDataAtual: function() {
@@ -154,12 +155,17 @@ window.APP.controllers.transacoes = {
                 t.*, 
                 c.nome as conta_nome, 
                 cat.nome as categoria_nome,
-                cc.nome as cartao_nome
+                cc.nome as cartao_nome,
+                GROUP_CONCAT(p.nome) as participantes_nomes,
+                GROUP_CONCAT(tp.valor_devido) as participantes_valores
             FROM transacoes t 
             JOIN contas c ON t.conta_id = c.id 
             JOIN categorias cat ON t.categoria_id = cat.id 
             LEFT JOIN cartoes_credito cc ON t.cartao_id = cc.id
+            LEFT JOIN transacoes_participantes tp ON t.id = tp.transacao_id
+            LEFT JOIN participantes p ON tp.participante_id = p.id
             WHERE t.ativo = 1 
+            GROUP BY t.id
             ORDER BY t.data_efetiva DESC
         `;
 
@@ -181,6 +187,9 @@ window.APP.controllers.transacoes = {
 
             transacoes.forEach(transacao => {
                 const tr = document.createElement('tr');
+                tr.setAttribute('data-transacao-id', transacao.id);
+                tr.onclick = () => this.mostrarModalParticipantes(transacao);
+                
                 tr.innerHTML = `
                     <td>${this.formatarDataHora(transacao.data_efetiva)}</td>
                     <td>${transacao.conta_nome}</td>
@@ -193,6 +202,45 @@ window.APP.controllers.transacoes = {
                 `;
                 tbody.appendChild(tr);
             });
+        });
+    },
+
+    mostrarModalParticipantes: function(transacao) {
+        const modal = document.getElementById('participantesModal');
+        if (!modal) return;
+
+        const sql = `
+            SELECT 
+                p.nome,
+                tp.valor_devido
+            FROM transacoes_participantes tp
+            JOIN participantes p ON tp.participante_id = p.id
+            WHERE tp.transacao_id = ?
+        `;
+
+        APP.db.all(sql, [transacao.id], (err, participantes) => {
+            if (err) {
+                console.error('Erro ao carregar participantes da transação:', err);
+                return;
+            }
+
+            const content = modal.querySelector('.modal-content');
+            content.innerHTML = `
+                <h3>Participantes da Transação</h3>
+                <p><strong>Data:</strong> ${this.formatarDataHora(transacao.data_efetiva)}</p>
+                <p><strong>Valor Total:</strong> ${APP.utils.formatarMoeda(transacao.valor)}</p>
+                <div class="participantes-lista">
+                    ${participantes.map(p => `
+                        <div class="participante-item">
+                            <span>${p.nome}</span>
+                            <span>${APP.utils.formatarMoeda(p.valor_devido)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <button onclick="document.getElementById('participantesModal').style.display='none'">Fechar</button>
+            `;
+
+            modal.style.display = 'block';
         });
     },
 
@@ -245,7 +293,8 @@ window.APP.controllers.transacoes = {
             descricao: document.getElementById('descricao').value,
             cartao_id: null,
             fatura_id: null,
-            numero_parcelas: 1
+            numero_parcelas: 1,
+            participantes: APP.controllers.participantes.coletarDadosParticipantes()
         };
 
         // Validações básicas
@@ -274,14 +323,14 @@ window.APP.controllers.transacoes = {
         }
 
         // Inserir transação
-                const sql = `
-                INSERT INTO transacoes (
-                    conta_id, tipo, categoria_id, valor, 
-                    data_efetiva, data_lancamento, metodo_pagamento, descricao,
-                    cartao_id, fatura_id, numero_parcelas
-                ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
-            `;
-            
+        const sql = `
+            INSERT INTO transacoes (
+                conta_id, tipo, categoria_id, valor, 
+                data_efetiva, data_lancamento, metodo_pagamento, descricao,
+                cartao_id, fatura_id, numero_parcelas
+            ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
+        `;
+        
         APP.db.run(sql, [
             formData.conta_id,
             formData.tipo,
@@ -298,6 +347,29 @@ window.APP.controllers.transacoes = {
                 console.error('Erro ao salvar transação:', err);
                 alert('Erro ao salvar transação');
                 return;
+            }
+
+            const transacaoId = this.lastID;
+
+            // Salvar participantes
+            if (formData.participantes && formData.participantes.length > 0) {
+                const sqlParticipantes = `
+                    INSERT INTO transacoes_participantes (
+                        transacao_id, participante_id, valor_devido
+                    ) VALUES (?, ?, ?)
+                `;
+
+                formData.participantes.forEach(participante => {
+                    APP.db.run(sqlParticipantes, [
+                        transacaoId,
+                        participante.id,
+                        participante.valor_devido
+                    ], function(err) {
+                        if (err) {
+                            console.error('Erro ao salvar participante da transação:', err);
+                        }
+                    });
+                });
             }
 
             if (formData.metodo_pagamento === APP.controllers.transacoes.METODOS_PAGAMENTO.CREDITO) {
@@ -334,10 +406,10 @@ window.APP.controllers.transacoes = {
 
         return false;
     }
-};
+    };
 
-window.carregarDadosIniciais = function() {
+    window.carregarDadosIniciais = function() {
     APP.controllers.transacoes.carregarDadosIniciais();
-};
+    };
 
-console.log('TransacoesController carregado completamente');
+    console.log('TransacoesController carregado completamente');

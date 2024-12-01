@@ -274,3 +274,100 @@ h3 {
         max-width: 100%;
     }
 }
+
+/* Estilos para o select múltiplo de participantes */
+#participantes_select {
+    min-height: 100px;
+    padding: 8px;
+}
+
+#participantes_select option {
+    padding: 5px;
+    margin: 2px 0;
+}
+
+/* Estilos para a área de valores dos participantes */
+.valores-participantes {
+    margin: 15px 0;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border: 1px solid #dcdde1;
+}
+
+.participante-valor {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.participante-valor label {
+    flex: 1;
+    margin-right: 15px;
+    margin-bottom: 0 !important;
+}
+
+.participante-valor input {
+    width: 150px !important;
+}
+
+/* Estilos para o modal de participantes */
+.participantes-lista {
+    margin: 20px 0;
+}
+
+.participante-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.participante-item:hover {
+    background-color: #eceef1;
+}
+
+/* Ajustes no modal existente */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #dcdde1;
+}
+
+.modal-header .close {
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.modal-header .close:hover {
+    color: #e74c3c;
+}
+
+.modal-body {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Estilo para indicar que a linha da tabela é clicável */
+#transacoesTable tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#transacoesTable tbody tr:hover {
+    background-color: #f1f2f6;
+}
+
+/* Estilo para mensagem de ajuda */
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #7f8c8d;
+    font-size: 12px;
+}

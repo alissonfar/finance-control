@@ -65,6 +65,18 @@
         </div>
     </div>
 
+    <div id="participantesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="document.getElementById('participantesModal').style.display='none'">&times;</span>
+                <h2>Detalhes dos Participantes</h2>
+            </div>
+            <div class="modal-body">
+                <!-- Será preenchido dinamicamente -->
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts em ordem de dependência -->
     <script>
         // Namespace global para a aplicação
@@ -83,7 +95,6 @@
                 document.getElementById('settingsDropdown').style.display = 'none';
             }
         }
-
         function carregarConfiguracoes(tipo) {
             const mainContent = document.getElementById('main-content');
             
@@ -252,7 +263,7 @@
 
                             <div class="form-group">
                                 <label for="valor">Valor:</label>
-                                <input type="number" id="valor" step="0.01" required>
+                                <input type="number" id="valor" step="0.01" required onchange="APP.controllers.participantes.atualizarValoresParticipantes()">
                             </div>
 
                             <div class="form-group">
@@ -293,6 +304,18 @@
                                 <input type="text" id="descricao">
                             </div>
 
+                            <div class="form-group">
+                                <label for="participantes_select">Participantes:</label>
+                                <select id="participantes_select" multiple onchange="APP.controllers.participantes.atualizarValoresParticipantes()">
+                                    <!-- Será preenchido dinamicamente -->
+                                </select>
+                                <small>Segure Ctrl (Windows) ou Command (Mac) para selecionar múltiplos participantes</small>
+                            </div>
+
+                            <div id="valores_participantes" class="valores-participantes">
+                                <!-- Será preenchido dinamicamente quando participantes forem selecionados -->
+                            </div>
+
                             <button type="submit">Salvar Transação</button>
                         </form>
                     </div>
@@ -320,6 +343,43 @@
                 
                 APP.controllers.transacoes.carregarDadosIniciais();
                 
+            } else if (pagina === 'participantes') {
+                mainContent.innerHTML = `
+                    <div class="card">
+                        <h2>Cadastro de Participantes</h2>
+                        
+                        <form id="participanteForm" onsubmit="return APP.controllers.participantes.handleSubmit(event)">
+                            <div class="form-group">
+                                <label for="nome_participante">Nome:</label>
+                                <input type="text" id="nome_participante" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="descricao_participante">Descrição:</label>
+                                <input type="text" id="descricao_participante">
+                            </div>
+                            
+                            <button type="submit">Salvar Participante</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <h3>Participantes Cadastrados</h3>
+                        <table id="participantesTable">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Descrição</th>
+                                    <th>Data Cadastro</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                APP.controllers.participantes.carregarDadosIniciais();
             } else {
                 mainContent.innerHTML = `
                     <div class="card">
@@ -342,6 +402,7 @@
     <script src="../controllers/ContasController.js"></script>
     <script src="../controllers/CartoesController.js"></script>
     <script src="../controllers/TransacoesController.js"></script>
+    <script src="../controllers/ParticipantesController.js"></script>
 
 </body>
 </html>

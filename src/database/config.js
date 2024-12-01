@@ -159,6 +159,41 @@ function initDatabase() {
             } else {
                 console.log('Tabela faturas verificada/criada');
             }
+        })
+        // Criar tabela participantes
+        db.run(`
+            CREATE TABLE IF NOT EXISTS participantes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            descricao TEXT,
+            ativo INTEGER DEFAULT 1,
+            data_criacao TEXT NOT NULL
+            )
+        `, (err) => {
+            if (err) {
+                console.error('Erro ao criar tabela participantes:', err);
+            } else {
+                console.log('Tabela participantes verificada/criada');
+            }
+        });
+
+        // Criar tabela transacoes_participantes
+        db.run(`
+            CREATE TABLE IF NOT EXISTS transacoes_participantes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transacao_id INTEGER NOT NULL,
+                participante_id INTEGER NOT NULL,
+                valor_devido DECIMAL(10,2) NOT NULL,
+                data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (transacao_id) REFERENCES transacoes(id),
+                FOREIGN KEY (participante_id) REFERENCES participantes(id)
+            )
+        `, (err) => {
+            if (err) {
+                console.error('Erro ao criar tabela transacoes_participantes:', err);
+            } else {
+                console.log('Tabela transacoes_participantes verificada/criada');
+            }
         });
 
         // Adicionar novas colunas na tabela transacoes
