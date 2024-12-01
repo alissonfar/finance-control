@@ -238,13 +238,7 @@
                         <h2>Registro de Transações</h2>
                         
                         <form id="transacaoForm" onsubmit="return APP.controllers.transacoes.handleSubmit(event)">
-                            <div class="form-group">
-                                <label for="conta_id">Conta:</label>
-                                <select id="conta_id" required>
-                                    <option value="">Selecione uma conta</option>
-                                </select>
-                            </div>
-
+  
                             <div class="form-group">
                                 <label for="tipo">Tipo:</label>
                                 <select id="tipo" required onchange="APP.controllers.transacoes.handleTipoChange(this.value)">
@@ -358,6 +352,19 @@
                                 <label for="descricao_participante">Descrição:</label>
                                 <input type="text" id="descricao_participante">
                             </div>
+
+                            <div class="form-group usa-contas-group">
+                                <input type="checkbox" id="usa_contas" onchange="APP.controllers.participantes.handleUsaContasChange(this.checked)">
+                                <label for="usa_contas">Participante usa contas</label>
+                            </div>
+
+                            <div id="contas_vinculadas" class="form-group" style="display: none;">
+                                <label for="contas_select">Contas vinculadas:</label>
+                                <select id="contas_select" multiple>
+                                    <!-- Será preenchido dinamicamente -->
+                                </select>
+                                <small>Segure Ctrl (Windows) ou Command (Mac) para selecionar múltiplas contas</small>
+                            </div>
                             
                             <button type="submit">Salvar Participante</button>
                         </form>
@@ -370,6 +377,8 @@
                                 <tr>
                                     <th>Nome</th>
                                     <th>Descrição</th>
+                                    <th>Usa Contas</th>
+                                    <th>Contas Vinculadas</th>
                                     <th>Data Cadastro</th>
                                 </tr>
                             </thead>
@@ -378,7 +387,7 @@
                         </table>
                     </div>
                 `;
-                
+
                 APP.controllers.participantes.carregarDadosIniciais();
             } else {
                 mainContent.innerHTML = `

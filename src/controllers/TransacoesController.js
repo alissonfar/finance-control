@@ -12,7 +12,6 @@ window.APP.controllers.transacoes = {
 
     carregarDadosIniciais: function() {
         console.log('Iniciando carregamento de dados...');
-        this.carregarContas();
         this.carregarCategorias();
         this.carregarTransacoes();
         this.inicializarMetodosPagamento();
@@ -22,7 +21,7 @@ window.APP.controllers.transacoes = {
 
     setDataAtual: function() {
         const hoje = new Date();
-        const dataFormatada = hoje.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+        const dataFormatada = hoje.toISOString().split('T')[0];
         const inputDataEfetiva = document.getElementById('data_efetiva');
         if (inputDataEfetiva) {
             inputDataEfetiva.value = dataFormatada;
@@ -49,27 +48,6 @@ window.APP.controllers.transacoes = {
             option.value = value;
             option.textContent = value;
             select.appendChild(option);
-        });
-    },
-
-    carregarContas: function() {
-        console.log('Tentando carregar contas...');
-        APP.db.all('SELECT * FROM contas WHERE ativo = 1', [], (err, contas) => {
-            if (err) {
-                console.error('Erro ao carregar contas:', err);
-                return;
-            }
-
-            const select = document.getElementById('conta_id');
-            if (!select) return;
-
-            select.innerHTML = '<option value="">Selecione uma conta</option>';
-            contas.forEach(conta => {
-                const option = document.createElement('option');
-                option.value = conta.id;
-                option.textContent = conta.nome;
-                select.appendChild(option);
-            });
         });
     },
 
@@ -147,19 +125,16 @@ window.APP.controllers.transacoes = {
             });
         });
     },
-
     carregarTransacoes: function() {
         console.log('Tentando carregar transações...');
         const sql = `
             SELECT 
                 t.*, 
-                c.nome as conta_nome, 
                 cat.nome as categoria_nome,
                 cc.nome as cartao_nome,
                 GROUP_CONCAT(p.nome) as participantes_nomes,
                 GROUP_CONCAT(tp.valor_devido) as participantes_valores
             FROM transacoes t 
-            JOIN contas c ON t.conta_id = c.id 
             JOIN categorias cat ON t.categoria_id = cat.id 
             LEFT JOIN cartoes_credito cc ON t.cartao_id = cc.id
             LEFT JOIN transacoes_participantes tp ON t.id = tp.transacao_id
@@ -192,12 +167,12 @@ window.APP.controllers.transacoes = {
                 
                 tr.innerHTML = `
                     <td>${this.formatarDataHora(transacao.data_efetiva)}</td>
-                    <td>${transacao.conta_nome}</td>
                     <td>${transacao.categoria_nome}</td>
                     <td>${transacao.tipo}</td>
                     <td>${APP.utils.formatarMoeda(transacao.valor)}</td>
                     <td>${transacao.metodo_pagamento}</td>
                     <td>${transacao.cartao_nome || '-'}</td>
+                    <td>${transacao.participantes_nomes || '-'}</td>
                     <td>${transacao.descricao || '-'}</td>
                 `;
                 tbody.appendChild(tr);
@@ -212,9 +187,13 @@ window.APP.controllers.transacoes = {
         const sql = `
             SELECT 
                 p.nome,
-                tp.valor_devido
+                p.usa_contas,
+                tp.valor_devido,
+                c.nome as conta_nome
             FROM transacoes_participantes tp
             JOIN participantes p ON tp.participante_id = p.id
+            LEFT JOIN participantes_contas pc ON p.id = pc.participante_id
+            LEFT JOIN contas c ON pc.conta_id = c.id
             WHERE tp.transacao_id = ?
         `;
 
@@ -234,6 +213,7 @@ window.APP.controllers.transacoes = {
                         <div class="participante-item">
                             <span>${p.nome}</span>
                             <span>${APP.utils.formatarMoeda(p.valor_devido)}</span>
+                            ${p.usa_contas ? `<span class="conta-info">(${p.conta_nome || 'Sem conta vinculada'})</span>` : ''}
                         </div>
                     `).join('')}
                 </div>
@@ -273,18 +253,15 @@ window.APP.controllers.transacoes = {
 
         if (metodo === this.METODOS_PAGAMENTO.CREDITO) {
             camposCartao.style.display = 'block';
-            const contaId = document.getElementById('conta_id').value;
-            this.carregarCartoes(contaId);
         } else {
             camposCartao.style.display = 'none';
         }
     },
 
-    handleSubmit: function(event) {
+    handleSubmit: async function(event) {
         event.preventDefault();
         
         const formData = {
-            conta_id: document.getElementById('conta_id').value,
             tipo: document.getElementById('tipo').value,
             categoria_id: document.getElementById('categoria_id').value,
             valor: document.getElementById('valor').value,
@@ -296,120 +273,168 @@ window.APP.controllers.transacoes = {
             numero_parcelas: 1,
             participantes: APP.controllers.participantes.coletarDadosParticipantes()
         };
-
+     
         // Validações básicas
-        if (!formData.conta_id || !formData.tipo || !formData.categoria_id || 
+        if (!formData.tipo || !formData.categoria_id || 
             !formData.valor || !formData.data_efetiva || !formData.metodo_pagamento) {
             alert('Por favor, preencha todos os campos obrigatórios');
             return false;
         }
-
+     
         const valor = parseFloat(formData.valor);
         if (isNaN(valor)) {
             alert('Por favor, insira um valor válido');
             return false;
         }
-
+     
         // Validações específicas para cartão de crédito
         if (formData.metodo_pagamento === this.METODOS_PAGAMENTO.CREDITO) {
             formData.cartao_id = document.getElementById('cartao_id').value;
             formData.fatura_id = document.getElementById('fatura_id').value;
             formData.numero_parcelas = parseInt(document.getElementById('numero_parcelas').value) || 1;
-
+     
             if (!formData.cartao_id || !formData.fatura_id) {
                 alert('Por favor, selecione o cartão e a fatura');
                 return false;
             }
         }
-
-        // Inserir transação
-        const sql = `
-            INSERT INTO transacoes (
-                conta_id, tipo, categoria_id, valor, 
-                data_efetiva, data_lancamento, metodo_pagamento, descricao,
-                cartao_id, fatura_id, numero_parcelas
-            ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
-        `;
-        
-        APP.db.run(sql, [
-            formData.conta_id,
-            formData.tipo,
-            formData.categoria_id,
-            valor,
-            formData.data_efetiva,
-            formData.metodo_pagamento,
-            formData.descricao,
-            formData.cartao_id,
-            formData.fatura_id,
-            formData.numero_parcelas
-        ], function(err) {
-            if (err) {
-                console.error('Erro ao salvar transação:', err);
-                alert('Erro ao salvar transação');
-                return;
-            }
-
-            const transacaoId = this.lastID;
-
-            // Salvar participantes
-            if (formData.participantes && formData.participantes.length > 0) {
-                const sqlParticipantes = `
-                    INSERT INTO transacoes_participantes (
-                        transacao_id, participante_id, valor_devido
-                    ) VALUES (?, ?, ?)
+     
+        try {
+            // Inserir transação
+            const transacaoId = await new Promise((resolve, reject) => {
+                const sql = `
+                    INSERT INTO transacoes (
+                        tipo, categoria_id, valor, 
+                        data_efetiva, data_lancamento, metodo_pagamento, descricao,
+                        cartao_id, fatura_id, numero_parcelas
+                    ) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
                 `;
-
-                formData.participantes.forEach(participante => {
-                    APP.db.run(sqlParticipantes, [
-                        transacaoId,
-                        participante.id,
-                        participante.valor_devido
-                    ], function(err) {
+                
+                APP.db.run(sql, [
+                    formData.tipo,
+                    formData.categoria_id,
+                    valor,
+                    formData.data_efetiva,
+                    formData.metodo_pagamento,
+                    formData.descricao,
+                    formData.cartao_id,
+                    formData.fatura_id,
+                    formData.numero_parcelas
+                ], function(err) {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    resolve(this.lastID);
+                });
+            });
+     
+            // Processar participantes e suas contas
+            if (formData.participantes && formData.participantes.length > 0) {
+                for (const participante of formData.participantes) {
+                    // 1. Salvar participante na transação
+                    await new Promise((resolve, reject) => {
+                        const sqlParticipantes = `
+                            INSERT INTO transacoes_participantes (
+                                transacao_id, participante_id, valor_devido
+                            ) VALUES (?, ?, ?)
+                        `;
+     
+                        APP.db.run(sqlParticipantes, [
+                            transacaoId,
+                            participante.id,
+                            participante.valor_devido
+                        ], function(err) {
+                            if (err) {
+                                reject(err);
+                            } else {
+                                resolve();
+                            }
+                        });
+                    });
+     
+                    // 2. Verificar e atualizar contas do participante
+                    const contasParticipante = await this.verificarContasParticipantes(participante.id);
+                    
+                    if (contasParticipante.length > 0) {
+                        // Se participante tem mais de uma conta, divide o valor entre elas
+                        const valorPorConta = participante.valor_devido / contasParticipante.length;
+                        
+                        for (const contaId of contasParticipante) {
+                            await new Promise((resolve, reject) => {
+                                const sqlAtualizarSaldo = `
+                                    UPDATE contas 
+                                    SET saldo_atual = saldo_atual ${formData.tipo === 'RECEITA' ? '+' : '-'} ?
+                                    WHERE id = ?
+                                `;
+     
+                                APP.db.run(sqlAtualizarSaldo, [valorPorConta, contaId], function(err) {
+                                    if (err) {
+                                        reject(err);
+                                    } else {
+                                        resolve();
+                                    }
+                                });
+                            });
+                        }
+                    }
+                }
+            }
+     
+            // Atualizar fatura se for cartão de crédito
+            if (formData.metodo_pagamento === this.METODOS_PAGAMENTO.CREDITO) {
+                await new Promise((resolve, reject) => {
+                    const sqlAtualizarFatura = `
+                        UPDATE faturas 
+                        SET valor_total = valor_total + ?
+                        WHERE id = ?
+                    `;
+     
+                    APP.db.run(sqlAtualizarFatura, [valor, formData.fatura_id], function(err) {
                         if (err) {
-                            console.error('Erro ao salvar participante da transação:', err);
+                            reject(err);
+                        } else {
+                            resolve();
                         }
                     });
                 });
             }
-
-            if (formData.metodo_pagamento === APP.controllers.transacoes.METODOS_PAGAMENTO.CREDITO) {
-                const sqlAtualizarFatura = `
-                    UPDATE faturas 
-                    SET valor_total = valor_total + ?
-                    WHERE id = ?
-                `;
-
-                APP.db.run(sqlAtualizarFatura, [valor, formData.fatura_id], function(err) {
-                    if (err) {
-                        console.error('Erro ao atualizar valor da fatura:', err);
-                    }
-                });
-            } else {
-                const sqlAtualizarSaldo = `
-                    UPDATE contas 
-                    SET saldo_atual = saldo_atual ${formData.tipo === 'RECEITA' ? '+' : '-'} ?
-                    WHERE id = ?
-                `;
-
-                APP.db.run(sqlAtualizarSaldo, [valor, formData.conta_id], function(err) {
-                    if (err) {
-                        console.error('Erro ao atualizar saldo:', err);
-                        alert('Erro ao atualizar saldo da conta');
-                        return;
-                    }
-                });
-            }
-
+     
             alert('Transação salva com sucesso!');
             carregarConteudo('transacoes');
-        });
-
+     
+        } catch (error) {
+            console.error('Erro ao processar transação:', error);
+            alert('Erro ao salvar transação');
+        }
+     
         return false;
-    }
-    };
+     },
 
-    window.carregarDadosIniciais = function() {
+    // Adicionar este novo método ao controller
+    verificarContasParticipantes: async function(participanteId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT c.id as conta_id
+                FROM participantes p
+                JOIN participantes_contas pc ON p.id = pc.participante_id
+                JOIN contas c ON pc.conta_id = c.id
+                WHERE p.id = ? AND p.usa_contas = 1
+            `;
+            
+            APP.db.all(sql, [participanteId], (err, contas) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve(contas.map(c => c.conta_id));
+            });
+        });
+    },
+};
+
+window.carregarDadosIniciais = function() {
     APP.controllers.transacoes.carregarDadosIniciais();
-    };
+};
 
-    console.log('TransacoesController carregado completamente');
+console.log('TransacoesController carregado completamente');

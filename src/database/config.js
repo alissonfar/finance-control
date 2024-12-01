@@ -92,7 +92,7 @@ function initDatabase() {
         db.run(`
             CREATE TABLE IF NOT EXISTS transacoes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                conta_id INTEGER NOT NULL,
+                conta_id INTEGER,
                 categoria_id INTEGER NOT NULL,
                 tipo TEXT NOT NULL CHECK (tipo IN ('RECEITA', 'DESPESA')),
                 valor DECIMAL(10,2) NOT NULL,
@@ -160,20 +160,41 @@ function initDatabase() {
                 console.log('Tabela faturas verificada/criada');
             }
         })
-        // Criar tabela participantes
+
+        // Criar tabela participantes com nova coluna usa_contas
         db.run(`
             CREATE TABLE IF NOT EXISTS participantes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            descricao TEXT,
-            ativo INTEGER DEFAULT 1,
-            data_criacao TEXT NOT NULL
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                descricao TEXT,
+                usa_contas INTEGER DEFAULT 0,
+                ativo INTEGER DEFAULT 1,
+                data_criacao TEXT NOT NULL
             )
         `, (err) => {
             if (err) {
                 console.error('Erro ao criar tabela participantes:', err);
             } else {
                 console.log('Tabela participantes verificada/criada');
+            }
+        });
+
+        // Criar tabela participantes_contas
+        db.run(`
+            CREATE TABLE IF NOT EXISTS participantes_contas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                participante_id INTEGER NOT NULL,
+                conta_id INTEGER NOT NULL,
+                data_vinculo DATETIME DEFAULT CURRENT_TIMESTAMP,
+                ativo INTEGER DEFAULT 1,
+                FOREIGN KEY (participante_id) REFERENCES participantes(id),
+                FOREIGN KEY (conta_id) REFERENCES contas(id)
+            )
+        `, (err) => {
+            if (err) {
+                console.error('Erro ao criar tabela participantes_contas:', err);
+            } else {
+                console.log('Tabela participantes_contas verificada/criada');
             }
         });
 
@@ -196,7 +217,7 @@ function initDatabase() {
             }
         });
 
-        // Adicionar novas colunas na tabela transacoes
+        // Adicionar novas colunas e índices
         const alteracoes = [
             {
                 sql: `ALTER TABLE transacoes ADD COLUMN cartao_id INTEGER REFERENCES cartoes_credito(id)`,
@@ -209,6 +230,14 @@ function initDatabase() {
             {
                 sql: `ALTER TABLE transacoes ADD COLUMN numero_parcelas INTEGER DEFAULT 1`,
                 mensagem: 'Coluna numero_parcelas já existe ou erro:'
+            },
+            {
+                sql: `CREATE INDEX IF NOT EXISTS idx_participantes_contas_participante ON participantes_contas(participante_id)`,
+                mensagem: 'Índice participantes_contas_participante já existe ou erro:'
+            },
+            {
+                sql: `CREATE INDEX IF NOT EXISTS idx_participantes_contas_conta ON participantes_contas(conta_id)`,
+                mensagem: 'Índice participantes_contas_conta já existe ou erro:'
             }
         ];
 
