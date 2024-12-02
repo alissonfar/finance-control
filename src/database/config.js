@@ -198,6 +198,72 @@ function initDatabase() {
             }
         });
 
+            // Criar tabela de pagamentos entre participantes
+        db.run(`
+            CREATE TABLE IF NOT EXISTS pagamentos_participantes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                pagador_id INTEGER NOT NULL,
+                recebedor_id INTEGER NOT NULL,
+                valor DECIMAL(10,2) NOT NULL,
+                data_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+                data_pagamento DATETIME NOT NULL,
+                status TEXT NOT NULL CHECK (status IN ('PENDENTE', 'CONFIRMADO', 'CANCELADO')),
+                descricao TEXT,
+                conta_origem_id INTEGER,
+                conta_destino_id INTEGER,
+                transacao_origem_id INTEGER,
+                ativo INTEGER DEFAULT 1,
+                FOREIGN KEY (pagador_id) REFERENCES participantes(id),
+                FOREIGN KEY (recebedor_id) REFERENCES participantes(id),
+                FOREIGN KEY (conta_origem_id) REFERENCES contas(id),
+                FOREIGN KEY (conta_destino_id) REFERENCES contas(id),
+                FOREIGN KEY (transacao_origem_id) REFERENCES transacoes(id)
+            )
+        `, (err) => {
+            if (err) {
+                console.error('Erro ao criar tabela pagamentos_participantes:', err);
+            } else {
+                console.log('Tabela pagamentos_participantes verificada/criada');
+            }
+        });
+
+        // Criar tabela de histórico de pagamentos
+        db.run(`
+            CREATE TABLE IF NOT EXISTS pagamentos_historico (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                pagamento_id INTEGER NOT NULL,
+                status_anterior TEXT,
+                status_novo TEXT NOT NULL,
+                data_alteracao DATETIME DEFAULT CURRENT_TIMESTAMP,
+                observacao TEXT,
+                FOREIGN KEY (pagamento_id) REFERENCES pagamentos_participantes(id)
+            )
+        `, (err) => {
+            if (err) {
+                console.error('Erro ao criar tabela pagamentos_historico:', err);
+            } else {
+                console.log('Tabela pagamentos_historico verificada/criada');
+            }
+        });
+
+        // Criar índices para otimização
+        db.run(`CREATE INDEX IF NOT EXISTS idx_pagamentos_pagador ON pagamentos_participantes(pagador_id)`, err => {
+            if (err) console.log('Índice pagador já existe ou erro:', err);
+        });
+
+        db.run(`CREATE INDEX IF NOT EXISTS idx_pagamentos_recebedor ON pagamentos_participantes(recebedor_id)`, err => {
+            if (err) console.log('Índice recebedor já existe ou erro:', err);
+        });
+
+        db.run(`CREATE INDEX IF NOT EXISTS idx_pagamentos_status ON pagamentos_participantes(status)`, err => {
+            if (err) console.log('Índice status já existe ou erro:', err);
+        });
+
+        db.run(`CREATE INDEX IF NOT EXISTS idx_pagamentos_datas ON pagamentos_participantes(data_pagamento, data_registro)`, err => {
+            if (err) console.log('Índice datas já existe ou erro:', err);
+        });
+
+
         // Criar tabela transacoes_participantes
         db.run(`
             CREATE TABLE IF NOT EXISTS transacoes_participantes (
