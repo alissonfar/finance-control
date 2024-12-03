@@ -1,0 +1,99 @@
+<!-- src/views/pages/transacoes.html -->
+<div class="card">
+    <h2>Registro de Transações</h2>
+    
+    <form id="transacaoForm">
+        <div class="form-group">
+            <label for="tipo">Tipo:</label>
+            <select id="tipo" required>
+                <option value="">Selecione o tipo</option>
+                <option value="RECEITA">Receita</option>
+                <option value="DESPESA">Despesa</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="categoria_id">Categoria:</label>
+            <select id="categoria_id" required>
+                <option value="">Selecione uma categoria</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="valor">Valor:</label>
+            <input type="number" id="valor" step="0.01" required>
+        </div>
+
+        <div class="form-group">
+            <label for="data_efetiva">Data e Hora da Transação:</label>
+            <input type="datetime-local" id="data_efetiva" required>
+        </div>
+
+        <div class="form-group">
+            <label for="metodo_pagamento">Método de Pagamento:</label>
+            <select id="metodo_pagamento" required>
+                <option value="">Selecione o método</option>
+            </select>
+        </div>
+
+        <div id="campos_cartao_credito" style="display: none;">
+            <div class="form-group">
+                <label for="cartao_id">Cartão de Crédito:</label>
+                <select id="cartao_id">
+                    <option value="">Selecione um cartão</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="fatura_id">Fatura:</label>
+                <select id="fatura_id">
+                    <option value="">Selecione uma fatura</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="numero_parcelas">Número de Parcelas:</label>
+                <input type="number" id="numero_parcelas" min="1" max="24" value="1">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="descricao">Descrição:</label>
+            <input type="text" id="descricao">
+        </div>
+
+        <div class="form-group">
+            <label for="participantes_select">Participantes:</label>
+            <select id="participantes_select" multiple>
+                <!-- Será preenchido dinamicamente -->
+            </select>
+            <small>Segure Ctrl (Windows) ou Command (Mac) para selecionar múltiplos participantes</small>
+        </div>
+
+        <div id="valores_participantes" class="valores-participantes">
+            <!-- Será preenchido dinamicamente quando participantes forem selecionados -->
+        </div>
+
+        <button type="submit">Salvar Transação</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Transações Cadastradas</h3>
+    <table id="transacoesTable">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Conta</th>
+                <th>Categoria</th>
+                <th>Tipo</th>
+                <th>Valor</th>
+                <th>Método</th>
+                <th>Cartão</th>
+                <th>Descrição</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>

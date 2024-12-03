@@ -1,0 +1,40 @@
+<!-- src/views/pages/contas.html -->
+<div class="card">
+    <h2>Cadastro de Contas</h2>
+    
+    <form id="contaForm">
+        <div class="form-group">
+            <label for="nome">Nome da Conta:</label>
+            <input type="text" id="nome" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="saldo_inicial">Saldo Inicial:</label>
+            <input type="number" id="saldo_inicial" step="0.01" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="descricao">Descrição:</label>
+            <input type="text" id="descricao">
+        </div>
+        
+        <button type="submit">Salvar Conta</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Contas Cadastradas</h3>
+    <table id="contasTable">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Saldo Atual</th>
+                <th>Saldo Inicial</th>
+                <th>Descrição</th>
+                <th>Data Criação</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>

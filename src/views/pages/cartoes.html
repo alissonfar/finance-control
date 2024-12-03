@@ -1,0 +1,53 @@
+<!-- src/views/pages/cartoes.html -->
+<div class="card">
+    <h2>Gestão de Cartões de Crédito</h2>
+    
+    <form id="cartaoForm">
+        <div class="form-group">
+            <label for="conta_id">Conta:</label>
+            <select id="conta_id" required>
+                <option value="">Selecione uma conta</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="nome">Nome do Cartão:</label>
+            <input type="text" id="nome" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="limite">Limite:</label>
+            <input type="number" id="limite" step="0.01" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="dia_fechamento">Dia do Fechamento:</label>
+            <input type="number" id="dia_fechamento" min="1" max="31" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="dia_vencimento">Dia do Vencimento:</label>
+            <input type="number" id="dia_vencimento" min="1" max="31" required>
+        </div>
+        
+        <button type="submit">Salvar Cartão</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Cartões Cadastrados</h3>
+    <table id="cartoesTable">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Conta</th>
+                <th>Limite</th>
+                <th>Dia Fechamento</th>
+                <th>Dia Vencimento</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>

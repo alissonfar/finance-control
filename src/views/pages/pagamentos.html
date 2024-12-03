@@ -1,0 +1,70 @@
+<!-- src/views/pages/pagamentos.html -->
+<div class="card">
+    <h2>Registro de Pagamentos</h2>
+    
+    <form id="pagamentoForm">
+        <div class="form-group">
+            <label for="pagador_id">Pagador:</label>
+            <select id="pagador_id" required>
+                <option value="">Selecione o pagador</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="recebedor_id">Recebedor:</label>
+            <select id="recebedor_id" required>
+                <option value="">Selecione o recebedor</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="valor">Valor:</label>
+            <input type="number" id="valor" step="0.01" required>
+        </div>
+
+        <div class="form-group">
+            <label for="data_pagamento">Data do Pagamento:</label>
+            <input type="datetime-local" id="data_pagamento" required>
+        </div>
+
+        <div class="form-group">
+            <label for="conta_origem_id">Conta de Origem:</label>
+            <select id="conta_origem_id">
+                <option value="">Selecione a conta de origem</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="conta_destino_id">Conta de Destino:</label>
+            <select id="conta_destino_id">
+                <option value="">Selecione a conta de destino</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="descricao">Descrição:</label>
+            <input type="text" id="descricao">
+        </div>
+
+        <button type="submit">Registrar Pagamento</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Pagamentos Registrados</h3>
+    <table id="pagamentosTable">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Pagador</th>
+                <th>Recebedor</th>
+                <th>Valor</th>
+                <th>Conta Origem</th>
+                <th>Conta Destino</th>
+                <th>Status/Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>

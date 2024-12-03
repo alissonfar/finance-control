@@ -1,5 +1,7 @@
-/* Reset e configurações básicas */
-* {
+/* ==========================================================================
+   1. Base Styles & Reset
+   ========================================================================== */
+   * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -15,7 +17,11 @@ body {
     color: #2c3e50;
 }
 
-/* Sidebar */
+/* ==========================================================================
+   2. Layout Components
+   ========================================================================== */
+
+/* 2.1 Sidebar */
 #sidebar {
     width: 250px;
     background-color: #2c3e50;
@@ -63,7 +69,7 @@ body {
     padding-left: 30px;
 }
 
-/* Conteúdo principal */
+/* 2.2 Main Content */
 #main-content {
     flex-grow: 1;
     padding: 30px;
@@ -71,7 +77,18 @@ body {
     background-color: #f5f6fa;
 }
 
-/* Formulários */
+/* 2.3 Cards */
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+/* ==========================================================================
+   3. Forms & Inputs
+   ========================================================================== */
 .form-group {
     margin-bottom: 20px;
 }
@@ -101,7 +118,47 @@ body {
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
 }
 
-/* Botões */
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #7f8c8d;
+    font-size: 12px;
+}
+
+/* Checkbox Groups */
+.usa-contas-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+}
+
+.usa-contas-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    vertical-align: middle;
+}
+
+.usa-contas-group label {
+    margin: 0;
+    cursor: pointer;
+}
+
+/* Multiple Select */
+#participantes_select {
+    min-height: 100px;
+    padding: 8px;
+}
+
+#participantes_select option {
+    padding: 5px;
+    margin: 2px 0;
+}
+
+/* ==========================================================================
+   4. Buttons
+   ========================================================================== */
 button {
     padding: 12px 24px;
     background-color: #3498db;
@@ -119,7 +176,30 @@ button:hover {
     transform: translateY(-1px);
 }
 
-/* Tabelas */
+/* Action Buttons */
+.btn-confirmar {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    margin: 0 2px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.btn-cancelar {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    margin: 0 2px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   5. Tables
+   ========================================================================== */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -146,7 +226,19 @@ tr:hover {
     background-color: #f8f9fa;
 }
 
-/* Transações */
+/* Clickable Table Rows */
+#transacoesTable tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#transacoesTable tbody tr:hover {
+    background-color: #f1f2f6;
+}
+
+/* ==========================================================================
+   6. Status Indicators
+   ========================================================================== */
 .transacao-receita {
     color: #2ecc71;
     font-weight: 500;
@@ -157,8 +249,29 @@ tr:hover {
     font-weight: 500;
 }
 
-/* Modal */
-.modal {
+.status-pendente {
+    background-color: #ffd700;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.status-confirmado {
+    background-color: #90EE90;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.status-cancelado {
+    background-color: #ffcccb;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+/* ==========================================================================
+   7. Modals
+   ========================================================================== */
+
+   .modal {
     display: none;
     position: fixed;
     z-index: 1000;
@@ -173,14 +286,103 @@ tr:hover {
 .modal-content {
     background-color: white;
     margin: 5% auto;
-    padding: 25px;
+    padding: 0;
     border-radius: 8px;
     width: 90%;
     max-width: 600px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 3px 20px rgba(0, 0, 0, 0.2);
+    position: relative;
 }
 
-/* Menu de Configurações */
+.modal-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #2c3e50;
+}
+
+.modal-header .close {
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s ease;
+}
+
+.modal-header .close:hover {
+    color: #e74c3c;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.transacao-info {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.transacao-info p {
+    margin: 5px 0;
+    color: #2c3e50;
+}
+
+.transacao-info strong {
+    display: inline-block;
+    width: 100px;
+}
+
+.participantes-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.participante-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 15px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.participante-item:hover {
+    background-color: #eef1f5;
+}
+
+.participante-nome {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.participante-valor {
+    font-weight: 500;
+    color: #e74c3c;
+    text-align: right;
+}
+
+.participante-contas {
+    color: #7f8c8d;
+    font-size: 0.9em;
+    text-align: right;
+}
+
+/* ==========================================================================
+   8. Settings Menu
+   ========================================================================== */
 .settings-menu {
     position: fixed;
     right: 30px;
@@ -225,7 +427,9 @@ tr:hover {
     background: #f5f6fa;
 }
 
-/* Cabeçalhos */
+/* ==========================================================================
+   9. Typography
+   ========================================================================== */
 h2 {
     color: #2c3e50;
     margin-bottom: 25px;
@@ -238,16 +442,9 @@ h3 {
     font-weight: 500;
 }
 
-/* Cards */
-.card {
-    background: white;
-    padding: 25px;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
-}
-
-/* Responsividade */
+/* ==========================================================================
+   10. Responsiveness
+   ========================================================================== */
 @media (max-width: 768px) {
     #sidebar {
         width: 70px;
@@ -273,175 +470,4 @@ h3 {
     .form-group select {
         max-width: 100%;
     }
-}
-
-/* Estilos para o select múltiplo de participantes */
-#participantes_select {
-    min-height: 100px;
-    padding: 8px;
-}
-
-#participantes_select option {
-    padding: 5px;
-    margin: 2px 0;
-}
-
-/* Estilos para a área de valores dos participantes */
-.valores-participantes {
-    margin: 15px 0;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border-radius: 5px;
-    border: 1px solid #dcdde1;
-}
-
-.participante-valor {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.participante-valor label {
-    flex: 1;
-    margin-right: 15px;
-    margin-bottom: 0 !important;
-}
-
-.participante-valor input {
-    width: 150px !important;
-}
-
-/* Estilos para o modal de participantes */
-.participantes-lista {
-    margin: 20px 0;
-}
-
-.participante-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
-    background-color: #f8f9fa;
-    border-radius: 5px;
-    margin-bottom: 5px;
-}
-
-.participante-item:hover {
-    background-color: #eceef1;
-}
-
-/* Ajustes no modal existente */
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #dcdde1;
-}
-
-.modal-header .close {
-    font-size: 24px;
-    cursor: pointer;
-    padding: 5px;
-}
-
-.modal-header .close:hover {
-    color: #e74c3c;
-}
-
-.modal-body {
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-/* Estilo para indicar que a linha da tabela é clicável */
-#transacoesTable tbody tr {
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-#transacoesTable tbody tr:hover {
-    background-color: #f1f2f6;
-}
-
-/* Estilo para mensagem de ajuda */
-.form-group small {
-    display: block;
-    margin-top: 5px;
-    color: #7f8c8d;
-    font-size: 12px;
-}
-
-.checkbox-group {
-    margin: 10px 0;
-    display: flex;
-    align-items: center;
-}
-
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-}
-
-.checkbox-label input[type="checkbox"] {
-    margin: 0;
-}
-
-.usa-contas-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 0;
-}
-
-.usa-contas-group input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    margin: 0;
-    vertical-align: middle;
-}
-
-.usa-contas-group label {
-    margin: 0;
-    cursor: pointer;
-}
-
-.status-pendente {
-    background-color: #ffd700;
-    padding: 2px 6px;
-    border-radius: 3px;
-}
-
-.status-confirmado {
-    background-color: #90EE90;
-    padding: 2px 6px;
-    border-radius: 3px;
-}
-
-.status-cancelado {
-    background-color: #ffcccb;
-    padding: 2px 6px;
-    border-radius: 3px;
-}
-
-.btn-confirmar {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    margin: 0 2px;
-    border-radius: 3px;
-    cursor: pointer;
-}
-
-.btn-cancelar {
-    background-color: #f44336;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    margin: 0 2px;
-    border-radius: 3px;
-    cursor: pointer;
 }

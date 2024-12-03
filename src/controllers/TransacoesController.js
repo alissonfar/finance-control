@@ -125,6 +125,7 @@ window.APP.controllers.transacoes = {
             });
         });
     },
+
     carregarTransacoes: function() {
         console.log('Tentando carregar transações...');
         const sql = `
@@ -143,36 +144,37 @@ window.APP.controllers.transacoes = {
             GROUP BY t.id
             ORDER BY t.data_efetiva DESC
         `;
-
+    
         APP.db.all(sql, [], (err, transacoes) => {
             if (err) {
                 console.error('Erro ao carregar transações:', err);
                 return;
             }
-
+    
             const tbody = document.querySelector('#transacoesTable tbody');
             if (!tbody) return;
-
+    
             tbody.innerHTML = '';
-
+    
             if (transacoes.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8">Nenhuma transação cadastrada</td></tr>';
                 return;
             }
-
+    
             transacoes.forEach(transacao => {
                 const tr = document.createElement('tr');
                 tr.setAttribute('data-transacao-id', transacao.id);
+                tr.style.cursor = 'pointer';
                 tr.onclick = () => this.mostrarModalParticipantes(transacao);
                 
                 tr.innerHTML = `
                     <td>${this.formatarDataHora(transacao.data_efetiva)}</td>
+                    <td>${transacao.conta || '-'}</td>
                     <td>${transacao.categoria_nome}</td>
                     <td>${transacao.tipo}</td>
                     <td>${APP.utils.formatarMoeda(transacao.valor)}</td>
                     <td>${transacao.metodo_pagamento}</td>
                     <td>${transacao.cartao_nome || '-'}</td>
-                    <td>${transacao.participantes_nomes || '-'}</td>
                     <td>${transacao.descricao || '-'}</td>
                 `;
                 tbody.appendChild(tr);
@@ -181,47 +183,73 @@ window.APP.controllers.transacoes = {
     },
 
     mostrarModalParticipantes: function(transacao) {
+        console.log('Abrindo modal para transação:', transacao);
+        
         const modal = document.getElementById('participantesModal');
-        if (!modal) return;
-
+        if (!modal) {
+            console.error('Modal não encontrado');
+            return;
+        }
+    
         const sql = `
             SELECT 
                 p.nome,
                 p.usa_contas,
                 tp.valor_devido,
-                c.nome as conta_nome
+                GROUP_CONCAT(c.nome) as contas_nomes
             FROM transacoes_participantes tp
             JOIN participantes p ON tp.participante_id = p.id
             LEFT JOIN participantes_contas pc ON p.id = pc.participante_id
             LEFT JOIN contas c ON pc.conta_id = c.id
             WHERE tp.transacao_id = ?
+            GROUP BY p.id, tp.valor_devido
         `;
-
+    
         APP.db.all(sql, [transacao.id], (err, participantes) => {
             if (err) {
                 console.error('Erro ao carregar participantes da transação:', err);
                 return;
             }
+    
+            console.log('Participantes carregados:', participantes);
+    
 
-            const content = modal.querySelector('.modal-content');
-            content.innerHTML = `
-                <h3>Participantes da Transação</h3>
-                <p><strong>Data:</strong> ${this.formatarDataHora(transacao.data_efetiva)}</p>
-                <p><strong>Valor Total:</strong> ${APP.utils.formatarMoeda(transacao.valor)}</p>
-                <div class="participantes-lista">
-                    ${participantes.map(p => `
-                        <div class="participante-item">
-                            <span>${p.nome}</span>
-                            <span>${APP.utils.formatarMoeda(p.valor_devido)}</span>
-                            ${p.usa_contas ? `<span class="conta-info">(${p.conta_nome || 'Sem conta vinculada'})</span>` : ''}
-                        </div>
-                    `).join('')}
+            modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalhes dos Participantes</h2>
+                    <span class="close" onclick="document.getElementById('participantesModal').style.display='none'">&times;</span>
                 </div>
-                <button onclick="document.getElementById('participantesModal').style.display='none'">Fechar</button>
-            `;
+                <div class="modal-body">
+                    <div class="transacao-info">
+                        <p><strong>Data:</strong> ${this.formatarDataHora(transacao.data_efetiva)}</p>
+                        <p><strong>Valor Total:</strong> ${APP.utils.formatarMoeda(transacao.valor)}</p>
+                    </div>
+                    <div class="participantes-lista">
+                        ${participantes.map(p => `
+                            <div class="participante-item">
+                                <div class="participante-nome">${p.nome}</div>
+                                <div class="participante-valor">${APP.utils.formatarMoeda(p.valor_devido)}</div>
+                                ${p.usa_contas ? 
+                                    `<div class="participante-contas">${p.contas_nomes || 'Sem conta vinculada'}</div>` 
+                                    : '<div class="participante-contas">Sem conta</div>'
+                                }
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
 
             modal.style.display = 'block';
         });
+
+        // Fechar modal quando clicar fora
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        };
     },
 
     handleTipoChange: function(tipo) {
