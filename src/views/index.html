@@ -32,28 +32,42 @@
     <script src="../database/connection.js"></script>
     <script src="../js/app.js"></script>
 
-    <!-- Controllers antigos -->
-    <script src="../controllers/ContasController.js"></script>
+    <!-- Controllers antigos - removido ContasController -->
     <script src="../controllers/CartoesController.js"></script>
     <script src="../controllers/ParticipantesController.js"></script>
     <script src="../controllers/PagamentosController.js"></script>
 
-    <!-- Novo Controller de Transações usando módulos -->
+    <!-- Controllers usando módulos -->
     <script type="module">
         import TransacoesController from '../controllers/transacoes/TransacoesController.js';
+        import ContasController from '../controllers/contas/ContasController.js';
         
-        // Inicializa o controller de transações quando o DOM estiver pronto
+        // Inicializa os controllers quando o DOM estiver pronto
         document.addEventListener('DOMContentLoaded', () => {
             try {
+                // Inicializa TransacoesController
                 new TransacoesController();
                 console.log('TransacoesController inicializado com sucesso');
+                
+                // Inicializa ContasController
+                const contasController = new ContasController();
+                
+                // Configura inicialização do ContasController quando a página de contas for carregada
+                document.addEventListener('router:pageLoaded', (event) => {
+                    if (event.detail.page === 'contas') {
+                        contasController.initialize();
+                    }
+                });
+                
+                console.log('ContasController preparado para inicialização');
             } catch (error) {
-                console.error('Erro ao inicializar TransacoesController:', error);
+                console.error('Erro ao inicializar controllers:', error);
             }
         });
     </script>
 
     <!-- Scripts das páginas -->
+ 
     <script src="../js/pages/contas.js"></script>
     <script src="../js/pages/cartoes.js"></script>
     <script src="../js/pages/transacoes.js"></script>

@@ -1,5 +1,4 @@
 // src/js/pages/contas.js
-
 const ContasPage = {
     init() {
         this.setupForm();
