@@ -86,6 +86,24 @@ body {
     margin-bottom: 20px;
 }
 
+/* 2.4 Transaction Info */
+.transacao-info {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.transacao-info p {
+    margin: 5px 0;
+    color: #2c3e50;
+}
+
+.transacao-info strong {
+    display: inline-block;
+    width: 100px;
+}
+
 /* ==========================================================================
    3. Forms & Inputs
    ========================================================================== */
@@ -156,6 +174,45 @@ body {
     margin: 2px 0;
 }
 
+/* 3.5 Participants List */
+.participantes-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.participante-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 15px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.participante-item:hover {
+    background-color: #eef1f5;
+}
+
+.participante-nome {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.participante-valor {
+    font-weight: 500;
+    color: #e74c3c;
+    text-align: right;
+}
+
+.participante-contas {
+    color: #7f8c8d;
+    font-size: 0.9em;
+    text-align: right;
+}
+
 /* ==========================================================================
    4. Buttons
    ========================================================================== */
@@ -199,11 +256,11 @@ button:hover {
 
 .botoes-cartao {
     display: flex;
-    gap: 8px;  /* Espaçamento entre os botões */
+    gap: 8px;
 }
 
 .botoes-cartao button {
-    flex: 1;  /* Faz os botões ocuparem espaço igual */
+    flex: 1;
 }
 
 /* ==========================================================================
@@ -245,6 +302,34 @@ tr:hover {
     background-color: #f1f2f6;
 }
 
+/* 5.2 Invoice Tables */
+.faturas-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.faturas-table th,
+.faturas-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.faturas-table th {
+    background-color: #f8f9fa;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.faturas-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.faturas-table td {
+    color: #2c3e50;
+}
+
 /* ==========================================================================
    6. Status Indicators
    ========================================================================== */
@@ -279,142 +364,244 @@ tr:hover {
 /* ==========================================================================
    7. Modals
    ========================================================================== */
-
-   .modal {
+.modal {
     display: none;
     position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(to bottom, #ffffff, #f8f9fa);
+    padding: 25px;
+    max-width: 90%;
+    width: 800px;
+    max-height: 85vh;
+    overflow: auto;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15),
+                0 1px 5px rgba(0, 0, 0, 0.1);
+    color: #2c3e50;
+    animation: modalFadeIn 0.3s ease-out;
     z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
 }
 
 .modal-content {
-    background-color: white;
-    margin: 5% auto;
-    padding: 0;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 600px;
-    box-shadow: 0 3px 20px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    height: auto;
     position: relative;
 }
 
 .modal-header {
+    margin: -25px -25px 20px -25px;
     padding: 20px 25px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #1a2634;
+    font-weight: 600;
+}
+
+.close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f1f3f5;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.close:hover {
+    background: #e9ecef;
+    transform: rotate(90deg);
+}
+
+.close::before,
+.close::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 2px;
+    background: #495057;
+    border-radius: 1px;
+}
+
+.close::before {
+    transform: rotate(45deg);
+}
+
+.close::after {
+    transform: rotate(-45deg);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
+    display: none;
+    z-index: 999;
+    animation: overlayFadeIn 0.3s ease-out;
+}
+
+/* 7.2 Side Panel */
+.side-panel {
+    position: fixed;
+    right: -450px;
+    top: 0;
+    width: 450px;
+    height: 100%;
+    background-color: white;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+    transition: right 0.3s ease;
+    z-index: 1100;
+}
+
+.side-panel.open {
+    right: 0;
+}
+
+.side-panel-header {
+    padding: 20px;
     border-bottom: 1px solid #eee;
     display: flex;
     justify-content: space-between;
     align-items: center;
     background-color: #f8f9fa;
-    border-radius: 8px 8px 0 0;
 }
 
-.modal-header h2 {
-    margin: 0;
-    font-size: 1.25rem;
-    color: #2c3e50;
+.side-panel-content {
+    padding: 20px;
+    height: calc(100% - 70px);
+    overflow-y: auto;
 }
 
-.modal-header .close {
-    font-size: 24px;
+.side-panel-close {
     cursor: pointer;
+    font-size: 20px;
     color: #666;
-    transition: color 0.2s ease;
 }
 
-.modal-header .close:hover {
-    color: #e74c3c;
+.side-panel-close:hover {
+    color: #333;
 }
 
-.modal-body {
-    padding: 25px;
-}
-
-.transacao-info {
-    background-color: #f8f9fa;
+.transacao-item {
     padding: 15px;
-    border-radius: 6px;
-    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    display: grid;
+    grid-template-columns: auto 120px;
+    gap: 15px;
 }
 
-.transacao-info p {
-    margin: 5px 0;
-    color: #2c3e50;
+.transacao-item:hover {
+    background-color: #f8f9fa;
 }
 
-.transacao-info strong {
-    display: inline-block;
-    width: 100px;
-}
-
-.participantes-lista {
+.transacao-detalhes {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 5px;
 }
 
-.participante-item {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: center;
-    gap: 15px;
-    padding: 12px 15px;
-    background-color: #f8f9fa;
-    border-radius: 6px;
-    transition: background-color 0.2s ease;
-}
-
-.participante-item:hover {
-    background-color: #eef1f5;
-}
-
-.participante-nome {
-    font-weight: 500;
-    color: #2c3e50;
-}
-
-.participante-valor {
-    font-weight: 500;
-    color: #e74c3c;
+.transacao-valor {
     text-align: right;
+    font-weight: 500;
 }
 
-.participante-contas {
-    color: #7f8c8d;
+.fatura-resumo {
+    background-color: #f8f9fa;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+.divisao-detalhes {
+    margin-top: 8px;
+    padding: 8px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.divisao-titulo {
+    display: block;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.participante-divisao {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
     font-size: 0.9em;
-    text-align: right;
+    color: #495057;
 }
 
-.faturas-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-.faturas-table th,
-.faturas-table td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-}
-
-.faturas-table th {
-    background-color: #f8f9fa;
+.valor-total {
     font-weight: 500;
     color: #2c3e50;
 }
 
-.faturas-table tr:hover {
-    background-color: #f8f9fa;
+.valor-dividido {
+    display: block;
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 2px;
 }
 
-.faturas-table td {
-    color: #2c3e50;
+/* Animações */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -48%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
 }
+
+@keyframes overlayFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Scrollbar personalizada */
+.modal::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal::-webkit-scrollbar-track {
+    background: #f1f3f5;
+    border-radius: 4px;
+}
+
+.modal::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 4px;
+}
+
+.modal::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
 /* ==========================================================================
    8. Settings Menu
    ========================================================================== */
@@ -505,110 +692,14 @@ h3 {
     .form-group select {
         max-width: 100%;
     }
-}
 
-/* Adicionar ao seu arquivo CSS */
-
-.side-panel {
-    position: fixed;
-    right: -450px; /* Começa fora da tela */
-    top: 0;
-    width: 450px;
-    height: 100%;
-    background-color: white;
-    box-shadow: -2px 0 5px rgba(0,0,0,0.2);
-    transition: right 0.3s ease;
-    z-index: 1100; /* Maior que o modal */
-}
-
-.side-panel.open {
-    right: 0;
-}
-
-.side-panel-header {
-    padding: 20px;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #f8f9fa;
-}
-
-.side-panel-content {
-    padding: 20px;
-    height: calc(100% - 70px);
-    overflow-y: auto;
-}
-
-.transacao-item {
-    padding: 15px;
-    border-bottom: 1px solid #eee;
-    display: grid;
-    grid-template-columns: auto 120px;
-    gap: 15px;
-}
-
-.transacao-item:hover {
-    background-color: #f8f9fa;
-}
-
-.transacao-detalhes {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.transacao-valor {
-    text-align: right;
-    font-weight: 500;
-}
-
-.side-panel-close {
-    cursor: pointer;
-    font-size: 20px;
-    color: #666;
-}
-
-.side-panel-close:hover {
-    color: #333;
-}
-
-.fatura-resumo {
-    background-color: #f8f9fa;
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 4px;
-}
-
-.divisao-detalhes {
-    margin-top: 8px;
-    padding: 8px;
-    background-color: #f8f9fa;
-    border-radius: 4px;
-}
-
-.divisao-titulo {
-    display: block;
-    color: #666;
-    margin-bottom: 4px;
-}
-
-.participante-divisao {
-    display: flex;
-    justify-content: space-between;
-    padding: 2px 0;
-    font-size: 0.9em;
-    color: #495057;
-}
-
-.valor-total {
-    font-weight: 500;
-    color: #2c3e50;
-}
-
-.valor-dividido {
-    display: block;
-    font-size: 0.8em;
-    color: #666;
-    margin-top: 2px;
+    .modal {
+        width: 95%;
+        padding: 20px;
+    }
+    
+    .modal-header {
+        margin: -20px -20px 15px -20px;
+        padding: 15px 20px;
+    }
 }
