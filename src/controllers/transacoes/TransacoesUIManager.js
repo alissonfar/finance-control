@@ -1,5 +1,3 @@
-// src/controllers/transacoes/TransacoesUIManager.js
-
 class TransacoesUIManager {
     constructor() {
         this.elements = this.cacheElements();
@@ -71,6 +69,18 @@ class TransacoesUIManager {
             option.value = cartao.id;
             option.textContent = cartao.nome;
             this.elements.cartaoSelect.appendChild(option);
+        });
+    }
+
+    updateFaturas(faturas) {
+        if (!this.elements.faturaSelect) return;
+
+        this.elements.faturaSelect.innerHTML = '<option value="">Selecione a fatura</option>';
+        faturas.forEach(fatura => {
+            const option = document.createElement('option');
+            option.value = fatura.id;
+            option.textContent = `${fatura.mes_referencia} (Venc: ${this.formatarData(fatura.data_vencimento)})`;
+            this.elements.faturaSelect.appendChild(option);
         });
     }
 
@@ -163,6 +173,9 @@ class TransacoesUIManager {
     hideCamposCartao() {
         if (this.elements.camposCartao) {
             this.elements.camposCartao.style.display = 'none';
+            if (this.elements.cartaoSelect) this.elements.cartaoSelect.value = '';
+            if (this.elements.faturaSelect) this.elements.faturaSelect.value = '';
+            if (this.elements.numeroParcelas) this.elements.numeroParcelas.value = '1';
         }
     }
 

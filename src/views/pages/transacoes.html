@@ -39,18 +39,18 @@
         <div id="campos_cartao_credito" style="display: none;">
             <div class="form-group">
                 <label for="cartao_id">Cartão de Crédito:</label>
-                <select id="cartao_id">
+                <select id="cartao_id" onchange="APP.controllers.transacoes.handleCartaoChange(this.value)">
                     <option value="">Selecione um cartão</option>
                 </select>
             </div>
-
+        
             <div class="form-group">
                 <label for="fatura_id">Fatura:</label>
-                <select id="fatura_id">
+                <select id="fatura_id" required>
                     <option value="">Selecione uma fatura</option>
                 </select>
             </div>
-
+        
             <div class="form-group">
                 <label for="numero_parcelas">Número de Parcelas:</label>
                 <input type="number" id="numero_parcelas" min="1" max="24" value="1">

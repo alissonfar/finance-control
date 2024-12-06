@@ -43,6 +43,7 @@ class TransacoesController {
             },
             handleTipoChange: (tipo) => this.handleTipoChange(tipo),
             handleMetodoPagamentoChange: (metodo) => this.handleMetodoPagamentoChange(metodo),
+            handleCartaoChange: (cartaoId) => this.handleCartaoChange(cartaoId),
             handleSubmit: (event) => this.handleSubmit(event),
             mostrarModalParticipantes: (transacao) => this.mostrarModalParticipantes(transacao)
         };
@@ -90,6 +91,21 @@ class TransacoesController {
         }
     }
 
+    async handleCartaoChange(cartaoId) {
+        try {
+            if (cartaoId) {
+                const faturas = await this.dataManager.loadFaturas(cartaoId);
+                if (!faturas || faturas.length === 0) {
+                    alert('Não há faturas abertas para este cartão. Por favor, gere uma nova fatura.');
+                    return;
+                }
+                this.uiManager.updateFaturas(faturas);
+            }
+        } catch (error) {
+            console.error('Erro ao lidar com mudança de cartão:', error);
+        }
+    }
+
     async carregarCategorias() {
         try {
             const categorias = await this.dataManager.loadCategorias();
@@ -112,10 +128,23 @@ class TransacoesController {
         event.preventDefault();
         const formData = this.uiManager.getFormData();
         
+        // Validação específica para cartão de crédito
+        if (formData.metodo_pagamento === window.APP.controllers.transacoes.METODOS_PAGAMENTO.CREDITO) {
+            if (!formData.cartao_id) {
+                alert('Por favor, selecione um cartão de crédito');
+                return;
+            }
+            if (!formData.fatura_id) {
+                alert('Por favor, selecione uma fatura');
+                return;
+            }
+        }
+        
         try {
             await this.dataManager.processarTransacao(formData);
             alert('Transação salva com sucesso!');
             await this.carregarDadosIniciais();
+            this.uiManager.elements.form.reset();
         } catch (error) {
             console.error('Erro ao processar transação:', error);
             alert('Erro ao salvar transação');

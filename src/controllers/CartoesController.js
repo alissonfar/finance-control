@@ -145,24 +145,16 @@ window.APP.controllers.cartoes = {
                 return;
             }
 
-            // Pegar data atual
             const hoje = new Date();
-            
-            // Ir para o primeiro dia do mês que vem (dezembro)
             const proximoMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
-            
-            // Ir para o próximo mês (janeiro)
             const mesDoFechamento = new Date(proximoMes.getFullYear(), proximoMes.getMonth() + 1, 1);
             
-            // Data de fechamento (dia 1 de janeiro)
             const fechamento = new Date(mesDoFechamento.getFullYear(), mesDoFechamento.getMonth(), 1);
             fechamento.setHours(12, 0, 0, 0);
             
-            // Data de vencimento (dia 7 de janeiro)
             const vencimento = new Date(mesDoFechamento.getFullYear(), mesDoFechamento.getMonth(), 7);
             vencimento.setHours(12, 0, 0, 0);
             
-            // Mês de referência será janeiro/2025
             const mesReferencia = `${fechamento.getFullYear()}-${String(fechamento.getMonth() + 1).padStart(2, '0')}`;
 
             const sql = `
@@ -198,25 +190,24 @@ window.APP.controllers.cartoes = {
             WHERE f.cartao_id = ? AND f.ativo = 1
             ORDER BY f.data_vencimento DESC
         `;
-    
+
         APP.db.all(sql, [cartaoId], (err, faturas) => {
             if (err) {
                 console.error('Erro ao carregar faturas:', err);
                 alert('Erro ao carregar faturas');
                 return;
             }
-    
-            // Remove modal anterior se existir
+
             const modalAnterior = document.getElementById('modalFaturas');
             if (modalAnterior) {
                 modalAnterior.remove();
             }
-    
+
             let html = `
                 <div id="modalFaturas" class="modal" style="display: block;">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h2>Faturas do Cartão</h2>
+                            <h3>Faturas do Cartão</h3>
                             <span class="close" onclick="document.getElementById('modalFaturas').remove()">&times;</span>
                         </div>
                         <div class="modal-body">
@@ -228,11 +219,12 @@ window.APP.controllers.cartoes = {
                                         <th>Vencimento</th>
                                         <th>Valor</th>
                                         <th>Status</th>
+                                        <th>Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
             `;
-    
+
             faturas.forEach(fatura => {
                 html += `
                     <tr>
@@ -241,10 +233,15 @@ window.APP.controllers.cartoes = {
                         <td>${APP.utils.formatarData(fatura.data_vencimento)}</td>
                         <td>${APP.utils.formatarMoeda(fatura.valor_total || 0)}</td>
                         <td>${fatura.status || 'ABERTA'}</td>
+                        <td>
+                            <button onclick="APP.controllers.cartoes.verDetalhesFatura(${fatura.id})" class="btn-detalhes">
+                                Ver Detalhes
+                            </button>
+                        </td>
                     </tr>
                 `;
             });
-    
+
             html += `
                                 </tbody>
                             </table>
@@ -252,9 +249,162 @@ window.APP.controllers.cartoes = {
                     </div>
                 </div>
             `;
-    
+
             document.body.insertAdjacentHTML('beforeend', html);
         });
+    },
+
+    verDetalhesFatura: function(faturaId) {
+        const sql = `
+            SELECT 
+                f.*,
+                cc.nome as cartao_nome,
+                t.id as transacao_id,
+                t.descricao,
+                t.valor as valor_total,
+                t.data_efetiva,
+                t.metodo_pagamento,
+                cat.nome as categoria_nome,
+                GROUP_CONCAT(COALESCE(p.nome, '')) as participantes_nomes,
+                GROUP_CONCAT(COALESCE(tp.valor_devido, 0)) as participantes_valores
+            FROM faturas f
+            JOIN cartoes_credito cc ON f.cartao_id = cc.id
+            LEFT JOIN transacoes t ON t.fatura_id = f.id AND t.ativo = 1
+            LEFT JOIN categorias cat ON t.categoria_id = cat.id
+            LEFT JOIN transacoes_participantes tp ON t.id = tp.transacao_id
+            LEFT JOIN participantes p ON tp.participante_id = p.id
+            WHERE f.id = ?
+            GROUP BY t.id
+            ORDER BY t.data_efetiva DESC
+        `;
+
+        APP.db.all(sql, [faturaId], (err, rows) => {
+            if (err) {
+                console.error('Erro ao carregar detalhes da fatura:', err);
+                alert('Erro ao carregar detalhes da fatura');
+                return;
+            }
+
+            if (rows.length === 0) return;
+
+            const panelAnterior = document.getElementById('faturaSidePanel');
+            if (panelAnterior) {
+                panelAnterior.remove();
+            }
+
+            const fatura = rows[0];
+
+            let html = `
+                <div id="faturaSidePanel" class="side-panel">
+                    <div class="side-panel-header">
+                        <h3>Detalhes da Fatura</h3>
+                        <span class="side-panel-close" onclick="APP.controllers.cartoes.fecharPainelFatura()">&times;</span>
+                    </div>
+                    <div class="side-panel-content">
+                        <div class="fatura-resumo">
+                            <h4>${fatura.cartao_nome} - ${fatura.mes_referencia}</h4>
+                            <p>Fechamento: ${APP.utils.formatarData(fatura.data_fechamento)}</p>
+                            <p>Vencimento: ${APP.utils.formatarData(fatura.data_vencimento)}</p>
+                            <p>Valor Total: ${APP.utils.formatarMoeda(fatura.valor_total || 0)}</p>
+                            <p>Status: ${fatura.status || 'ABERTA'}</p>
+                        </div>
+
+                        <h4>Transações da Fatura</h4>
+            `;
+
+            if (!rows[0].transacao_id) {
+                html += '<p>Nenhuma transação registrada</p>';
+            } else {
+                rows.forEach(row => {
+                    if (row.transacao_id) {
+                        const nomes = row.participantes_nomes ? row.participantes_nomes.split(',').filter(n => n !== '') : [];
+                        const valores = row.participantes_valores ? row.participantes_valores.split(',').filter(v => v !== '') : [];
+                        const participantes = nomes.map((nome, index) => ({
+                            nome,
+                            valor: parseFloat(valores[index]) || 0
+                        }));
+
+                        html += `
+                            <div class="transacao-item">
+                                <div class="transacao-detalhes">
+                                    <strong>${row.descricao}</strong>
+                                    <small>${row.categoria_nome || 'Sem categoria'}</small>
+                                    <small>${APP.utils.formatarData(row.data_efetiva)}</small>
+                                    ${participantes.length > 0 ? `
+                                        <div class="divisao-detalhes">
+                                            <small class="divisao-titulo">Divisão:</small>
+                                            ${participantes.map(p => `
+                                                <div class="participante-divisao">
+                                                    <span>${p.nome}</span>
+                                                    <span>${APP.utils.formatarMoeda(p.valor)}</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div class="transacao-valor">
+                                    <div class="valor-total">${APP.utils.formatarMoeda(row.valor_total)}</div>
+                                    ${participantes.length > 1 ? `
+                                        <small class="valor-dividido">Dividido entre ${participantes.length}</small>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            html += `
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', html);
+            
+            // Adiciona o CSS necessário se ainda não existir
+            if (!document.getElementById('participantesStyle')) {
+                const style = document.createElement('style');
+                style.id = 'participantesStyle';
+                style.textContent = `
+                    .divisao-detalhes {
+                        margin-top: 8px;
+                        font-size: 0.9em;
+                        border-top: 1px solid #eee;
+                        padding-top: 8px;
+                    }
+                    .divisao-titulo {
+                        display: block;
+                        margin-bottom: 4px;
+                        color: #666;
+                    }
+                    .participante-divisao {
+                        display: flex;
+                        justify-content: space-between;
+                        margin: 2px 0;
+                        padding: 2px 0;
+                    }
+                    .valor-dividido {
+                        display: block;
+                        text-align: right;
+                        color: #666;
+                        font-size: 0.8em;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            setTimeout(() => {
+                document.getElementById('faturaSidePanel').classList.add('open');
+            }, 50);
+        });
+    },
+    
+    fecharPainelFatura: function() {
+        const panel = document.getElementById('faturaSidePanel');
+        if (panel) {
+            panel.classList.remove('open');
+            setTimeout(() => panel.remove(), 300);
+        }
     }
 };
 
