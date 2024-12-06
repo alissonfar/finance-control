@@ -197,6 +197,15 @@ button:hover {
     cursor: pointer;
 }
 
+.botoes-cartao {
+    display: flex;
+    gap: 8px;  /* Espaçamento entre os botões */
+}
+
+.botoes-cartao button {
+    flex: 1;  /* Faz os botões ocuparem espaço igual */
+}
+
 /* ==========================================================================
    5. Tables
    ========================================================================== */
@@ -380,6 +389,32 @@ tr:hover {
     text-align: right;
 }
 
+.faturas-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.faturas-table th,
+.faturas-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.faturas-table th {
+    background-color: #f8f9fa;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.faturas-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.faturas-table td {
+    color: #2c3e50;
+}
 /* ==========================================================================
    8. Settings Menu
    ========================================================================== */

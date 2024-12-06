@@ -11,6 +11,37 @@ class ModuleLoader {
     static #instances = new Map();
 
     /**
+     * Utilitários globais do sistema
+     * @private
+     */
+    static #globalUtils = {
+        formatarData: function(data) {
+            if (!data) return '';
+            const date = new Date(data);
+            return date.toLocaleDateString('pt-BR');
+        },
+        
+        formatarMoeda: function(valor) {
+            if (valor === null || valor === undefined) return 'R$ 0,00';
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(valor);
+        },
+
+        // Outros utilitários existentes
+        formatarDataHora: function(data) {
+            if (!data) return '';
+            const date = new Date(data);
+            return date.toLocaleString('pt-BR');
+        },
+
+        validarNumero: function(valor) {
+            return !isNaN(parseFloat(valor)) && isFinite(valor);
+        }
+    };
+
+    /**
      * Inicializa um controller e o integra com o sistema legado
      * @param {string} controllerName - Nome do controller (ex: 'transacoes')
      * @param {class} ControllerClass - Classe do controller
@@ -71,9 +102,14 @@ class ModuleLoader {
      * @param {Object} utils - Objeto com utilitários
      */
     static registerGlobalUtils(utils) {
+        this.#globalUtils = {
+            ...this.#globalUtils,
+            ...utils
+        };
+
         window.APP.utils = {
             ...window.APP.utils,
-            ...utils
+            ...this.#globalUtils
         };
     }
 
@@ -114,7 +150,17 @@ class ModuleLoader {
     static isInitialized(controllerName) {
         return this.#instances.has(controllerName);
     }
+
+    /**
+     * Inicializa os utilitários globais do sistema
+     */
+    static initializeGlobalUtils() {
+        this.registerGlobalUtils(this.#globalUtils);
+    }
 }
+
+// Inicializa os utilitários globais
+ModuleLoader.initializeGlobalUtils();
 
 // Exporta os métodos individuais para uso mais simples
 export const {
